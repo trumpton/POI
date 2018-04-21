@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/marker-icon.ico</file>
+        <file>resources/marker-blue-icon.png</file>
+        <file>resources/google_maps.html</file>
+	<file>resources/marker-green.png</file>
+	<file>resources/marker-green-dot.png</file>
+	<file>resources/marker-red.png</file>
+	<file>resources/marker-red-dot.png</file>
+        <file>resources/marker-blue.png</file>
+        <file>resources/marker-blue-dot.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100%; width: 100% }
+    </style>
+
+    <!-- Debug with command line option: --remote-debugging-port=23456, and use web browser -->
+
+    <!-- enable interface to C++ -->
+    <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?libraries=places&key={APIKEY}&sensor=false">
+    </script>
+
+
+    <script type="text/javascript">
+      var map;                 // Setup by initialise
+      var GoogleMapsWidget ;   // Setup by initialise
+      var searchservice ;      // Setup by initialise
+      var detailsservice ;     // Setup by initialise
+      var geocoderservice ;    // Setup by initialise
+      var collectionworking ;  // Setup by initialise
+      var geocodemarkerindex ; // Setup by initialise
+
+      var markers = [];
+
+      var initialLat = 48.13 ;
+      var initialLon = 11.57 ;
+      var initialZoom = 3 ;
+
+      // https://sites.google.com/site/gmapsdevelopment/
+      var iconworking = "qrc:///resources/marker-red.png" ;
+      var iconworkingselected = "qrc:///resources/marker-red-dot.png" ;
+      var iconfile = "qrc:///resources/marker-green.png" ;
+      var iconfileselected = "qrc:///resources/marker-green-dot.png" ;
+
+      // Create Map
+
+      function initialise(workinguuid) {
+
+        var myOptions = {
+          center: new google.maps.LatLng(initialLat, initialLon),
+          zoom: initialZoom,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          panControl: true
+        };
+
+        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+        
+        searchservice = new google.maps.places.PlacesService(map) ;
+        detailsservice = new google.maps.places.PlacesService(map);
+        geocoderservice = new google.maps.Geocoder;        
+        collectionworking = workinguuid ;
+        geocodemarkerindex = -1 ;
+
+        if ("GoogleMapsWebViewWidget" in window) {
+            // WebView (set with addToJavaScriptWindowObject)
+            GoogleMapsWidget = GoogleMapsWebViewWidget ;
+        } else {
+            // WebEngineView (set via channel)
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                GoogleMapsWidget = channel.objects.GoogleMapsWidget;
+              } );
+        }
+
+        GoogleMapsWidget.jsmapMoved(initialLat, initialLon, initialZoom) ;
+      }
+
+
+      // Details and response handler
+      function searchDetails(placeid) {
+        detailsservice.getDetails({placeId: placeid}, handlerSearchLocationResults);
+      }
+
+      // Search for Details at Lat/Lon
+      function searchLatLon(lat,lon) {
+        var latlon = { lat: lat, lng: lon } ;
+        geocoderservice.geocode({'location': latlon}, handlerSearchLocationResults) ;
+      }
+
+      // Search and response handler
+      function searchLocation(searchstring) {
+        searchservice.textSearch({query: searchstring}, handlerSearchLocationResults) ;
+      }
+
+      function handlerSearchLocationResults(results, status) {
+
+        if (typeof GoogleMapsWidget === 'undefined') return ;
+
+// TODO: suspect lat/lon are not vald values here
+// insert breakpoint and search or click +
+//
+// Error: GoogleMapsWidget::searchLatLon() =>
+// "searchLatLon(48.13,11.57);"
+// Could not convert argument QJsonValue(null) to target type "double" .
+// Could not convert argument QJsonValue(null) to target type "double" .
+//
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+            var placeid = results[0].place_id ;
+            var lat = results[0].geometry.location.lat() ;
+            var lon = results[0].geometry.location.lng() ;
+            var addr = results[0].formatted_address ;
+            var phone = results[0].international_phone_number ;
+            if (typeof addr === 'undefined') addr="unknown" ;
+            if (typeof phone === 'undefined') {
+                phone = results[0].formatted_phone_number ;
+                if (typeof phone === 'undefined') phone="" ;
+            }
+            GoogleMapsWidget.jsSearchResultsReady(placeid, lat, lon, addr, phone) ;
+        } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            GoogleMapsWidget.jsSearchFailed("Nothing Found") ;
+        } else {
+            GoogleMapsWidget.jsSearchFailed(status) ;
+        }
+
+      }
+
+      // Navigation
+
+      function gotoCoordinates(pos, zoom) {
+        if (zoom>0) map.setZoom(zoom);
+        map.setCenter(pos);
+        handleMapMoved() ;
+      }
+
+      // Marker Management
+
+      function setMarker(uuid, collectionuuid, lat, lon, address) {
+        var draggable = false ;
+        if (collectionuuid == collectionworking) draggable = true ;
+        var marker = new google.maps.Marker({
+            map: map,
+            uuid: uuid,
+            collectionuuid: collectionuuid,
+            zIndex: 1,
+            position: new google.maps.LatLng(lat, lon),
+            draggable: draggable,
+            address: address,
+            animation: google.maps.Animation.DROP});
+        if (collectionuuid === collectionworking) {
+            marker.setIcon(iconworking) ;
+        } else {
+            marker.setIcon(iconfile) ;
+        }
+        removeMarker(uuid) ;
+        markers.push(marker) ;
+        google.maps.event.addListener(marker, 'click', function(){handleMarkerSelected(marker);});
+        google.maps.event.addListener(marker, 'dragstart', function(){handleMarkerSelected(marker);});
+        google.maps.event.addListener(marker, 'dragend', function(){handleMarkerMoved(marker);});
+        map.addListener('center_changed', function(){handleMapMoved(map);}) ;
+        map.addListener('zoom_changed', function(){handleMapMoved(map);}) ;
+
+// TODO: Do we need to select and geocode new markers
+//        selectMarker(uuid) ;
+//        geocodeMarker(uuid) ;
+      }
+
+      function setMarkerCollection(uuid, collectionuuid) {
+          var i=markers.length-1 ;
+          while (i>=0 && markers[i].uuid !== uuid) i-- ;
+          if (i>=0) {
+            markers[i].collectionuuid = collectionuuid ;
+            if (collectionuuid == collectionworking) {
+                markers[i].draggable = true ;
+            } else {
+                markers[i].draggable = false ;
+            }
+          }
+          selectMarker(uuid) ;
+      }
+
+      function selectMarker(uuid) {
+
+        var selectedmarker=-1 ;
+        var selectedisworking=false ;
+
+        // Redraw non-selected marker, and identify selected
+        for (var i = 0; i < markers.length; i++) {
+          var selected = (markers[i].uuid === uuid) ;
+          var working = (markers[i].collectionuuid === collectionworking) ;
+          if (selected) {
+            selectedmarker = i ;
+            selectedisworking = working ;
+          } else {
+            if (working) {
+              markers[i].setIcon(iconworking) ;
+            } else {
+              markers[i].setIcon(iconfile) ;
+            }
+            markers[i].setZIndex(1);
+          }
+        }
+
+        // TODO: This marker must be brought to the front
+        // Re-draw selected marker
+        if (selectedmarker>=0) {
+          if (selectedisworking) {
+            markers[selectedmarker].setIcon(iconworkingselected) ;
+          } else {
+            markers[selectedmarker].setIcon(iconfileselected) ;
+          }
+          markers[selectedmarker].setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+        }
+
+      }
+
+      function seekToMarker(uuid, zoom) {
+        var i=markers.length-1 ;
+        while (i>=0 && markers[i].uuid !== uuid) i-- ;
+        if (i>=0) {
+            var pos = markers[i].position ;
+            gotoCoordinates(pos, zoom);
+        }
+      }
+
+      function geocodeMarker(uuid, forcegeocode)
+      {
+      geocodedmarkerindex=-1 ;
+        for (var i = 0; i < markers.length && geocodedmarkerindex < 0; i++) {
+          if (markers[i].uuid === uuid && (markers[i].address == "" || forcegeocode) ) {
+            geocodemarkerindex=i ;
+            var pos=markers[i].getPosition() ;
+            geocoderservice.geocode({
+               latLng: pos
+            },
+            function(results, status)
+            {
+              var address="Unknown Location" ;
+              var lat=pos.lat() ;
+              var lon=pos.lng() ;
+              var uuid = markers[geocodemarkerindex].uuid ;
+              var collectionuuid = markers[geocodemarkerindex].collectionuuid ;
+              if (status === google.maps.GeocoderStatus.OK) {
+                  address=results[0].formatted_address;
+              }
+              markers[geocodemarkerindex].address=address ;
+              if (typeof GoogleMapsWidget !== 'undefined') {
+                GoogleMapsWidget.jsmarkerGeocoded(uuid, collectionuuid, address) ;
+              }
+            });
+          }
+        }
+      }
+
+      function removeMarker(uuid) {
+        var j=-1;
+        for (var i = 0; i < markers.length; i++) {
+            if (markers[i].uuid === uuid) { j=i ; }
+        }
+        if (j>=0) { markers[j].setMap(null); markers.splice(j, 1); }
+      }
+
+      function removeAllMarkers() {
+        for (var i = 0; i < markers.length; i++ ) {
+            markers[i].setMap(null);
+        }
+        markers.length = 0;
+      }
+
+
+
+      // Event Handlers / Dispatchers
+
+      function handleMapMoved()
+      {
+          var Loc = map.getCenter() ;
+          var zoom = map.getZoom() ;
+          if (typeof GoogleMapsWidget !== 'undefined')
+              GoogleMapsWidget.jsmapMoved(Loc.lat(), Loc.lng(), zoom) ;
+      }
+
+      function handleMarkerMoved(marker)
+      {
+          var pos=marker.getPosition() ;
+          GoogleMapsWidget.jsmarkerMoved(marker.uuid, marker.collectionuuid, pos.lat(), pos.lng()) ;
+      }
+
+      function handleMarkerSelected(marker)
+      {
+          selectMarker(marker.uuid) ;
+          GoogleMapsWidget.jsmarkerSelected(marker.uuid, marker.collectionuuid) ;
+      }
+
+    </script>
+  </head>
+
+  <body>
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
+

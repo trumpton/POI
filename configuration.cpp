@@ -9,7 +9,7 @@ Configuration::Configuration(QWidget *parent) :
     ui(new Ui::Configuration)
 {
     ui->setupUi(this);
-    settings = new QSettings("trumpton.org.uk", "Poi");
+    settings = new QSettings("trumpton.uk", "Poi");
     QDir::setCurrent(configFolder()) ;
 }
 

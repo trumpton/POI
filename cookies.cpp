@@ -15,7 +15,7 @@ Cookies::~Cookies()
 bool Cookies::load(QString identifier)
 {
     cachedIdentifier = identifier ;
-    QSettings settings("trumpton.org.uk", QString("Cookies-") + cachedIdentifier);
+    QSettings settings("trumpton.uk", QString("Cookies-") + cachedIdentifier);
     int size = settings.value("size").toInt() ;
     for (int i=0; i<size; i++) {
         QByteArray r = settings.value(QString::number(i)).toByteArray() ;
@@ -28,7 +28,7 @@ bool Cookies::load(QString identifier)
 
 bool Cookies::save()
 {
-    QSettings settings("trumpton.org.uk", QString("Cookies-") + cachedIdentifier);
+    QSettings settings("trumpton.uk", QString("Cookies-") + cachedIdentifier);
     QList<QNetworkCookie> list = allCookies() ;
     settings.setValue("size", QString::number(list.size())) ;
     for (int i=0; i<list.size(); i++) {

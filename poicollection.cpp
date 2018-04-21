@@ -172,7 +172,7 @@ bool PoiCollection::save()
     // Add Source Record (deleted record, lat=-180, lon=1)
     PoiEntry source ;
     source.setLatLon(-180.0, 1.0) ;
-    source.setDescription(QString("TomTom / Google Points of Interest Editor - www.trumpton.org.uk")) ;
+    source.setDescription(QString("TomTom / Google Points of Interest Editor - www.trumpton.uk")) ;
     success = source.writeOv2(outputstream, 0) ;
 
     // Add Date Stamp (valid type 2 record, lat=-180, lon=0)

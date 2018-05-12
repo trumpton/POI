@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" creator="GPSies http://www.gpsies.com - GPSies Track" version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>GPSies Track</name>
+    <link href="http://www.gpsies.com/">
+      <text>GPSies Track on GPSies.com</text>
+    </link>
+    <time>2018-05-12T11:41:20Z</time>
+  </metadata>
+  <wpt lat="43.36257137" lon="-1.40140861">
+    <ele>64.000000</ele>
+    <name>Start</name>
+    <desc>Hotel Belvue
+Restaruant &amp; Hotel</desc>
+    <link href="www.belvue.fr">
+      <type>web</type>
+    </link>
+    <sym>food</sym>
+    <type>Food</type>
+  </wpt>
+  <wpt lat="43.36279757" lon="-1.40357047">
+    <ele>69.000000</ele>
+    <name>WP 2</name>
+    <desc>La Grillandiére</desc>
+    <link href="http://url.com/">
+      <type>web</type>
+    </link>
+    <sym>food</sym>
+    <type>Food</type>
+  </wpt>
+  <wpt lat="43.35937714" lon="-1.40374213">
+    <ele>71.000000</ele>
+    <name>WP 3</name>
+    <desc>Cross the Road</desc>
+    <sym>danger</sym>
+    <type>Danger</type>
+  </wpt>
+  <wpt lat="43.35409595" lon="-1.40566796">
+    <ele>96.000000</ele>
+    <name>WP 4</name>
+    <desc>Picnique</desc>
+    <sym>water</sym>
+    <type>Water</type>
+  </wpt>
+  <wpt lat="43.35227435" lon="-1.40853792">
+    <ele>149.00000</ele>
+    <name>WP 5</name>
+    <desc>La Bergerie</desc>
+    <sym>summit</sym>
+    <type>Summit</type>
+  </wpt>
+</gpx>
+

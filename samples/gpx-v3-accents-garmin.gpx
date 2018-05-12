@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<gpx
+xmlns="http://www.topografix.com/GPX/1/1"
+xmlns:gpxx = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
+xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd
+http://www.garmin.com/xmlschemas/GpxExtensions/v3
+http://www8.garmin.com/xmlschemas/GpxExtensions/v3/GpxExtensionsv3.xsd"
+version="1.1"
+creator="creator.com">
+   <wpt lat="43.363851" lon="-1.405698">
+      <ele>1</ele>
+      <time>2018-05-12T08:58:56Z</time>
+      <name>La Grillandière</name>
+      <cmt>Comment</cmt>
+      <desc>Restaurant</desc>
+      <sym>food</sym>
+      <type>Restaurant</type>
+      <extensions>
+         <gpxx:WaypointExtension>
+            <gpxx:Proximity>10</gpxx:Proximity>
+            <gpxx:Categories>
+               <gpxx:Category>Restaurant</gpxx:Category>
+            </gpxx:Categories>
+            <gpxx:Address>
+               <gpxx:StreetAddress>Avenue Chantecler</gpxx:StreetAddress>
+               <gpxx:City>Cambo-les-Bains</gpxx:City>
+               <gpxx:State>Nouvelle-Aquitaine</gpxx:State>
+               <gpxx:Country>FR</gpxx:Country>
+               <gpxx:PostalCode>64250</gpxx:PostalCode>
+            </gpxx:Address>
+            <gpxx:PhoneNumber Category="Phone">01234567891</gpxx:PhoneNumber>
+            <gpxx:PhoneNumber Category="Phone2">01234567892</gpxx:PhoneNumber>
+            <gpxx:PhoneNumber Category="Fax">01234567893</gpxx:PhoneNumber>
+            <gpxx:PhoneNumber Category="Email">email@email.com</gpxx:PhoneNumber>
+            <gpxx:PhoneNumber Category="URL">http://url.com/</gpxx:PhoneNumber>
+         </gpxx:WaypointExtension>
+      </extensions>
+   </wpt>
+</gpx>

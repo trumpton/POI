@@ -20,16 +20,16 @@ private:
 signals:
     void mapMoved(double lat, double lon, int zoom) ;
     void markerMoved(const QString& uuid, const QString& collectionuuid, const double lat, const double lon) ;
-    void markerGeocoded(const QString& uuid, const QString& collectionuuid, const QString& address) ;
+    void markerGeocoded(const QString& uuid, const QString& collectionuuid, const QString& formattedaddress, QString &door, QString &street, QString& town, QString& state, QString& country, QString& postcode) ;
     void markerSelected(const QString& uuid, const QString& collectionuuid) ;
-    void searchResultsReady(const QString& placeid, const double lat, const double lon, const QString& address, const QString& phone) ;
+    void searchResultsReady(const double lat, const double lon, const QString& address, const QString& phone) ;
     void searchFailed(const QString& error) ;
 
 public slots:
     void initialise2(bool ok) ;
     void jsmarkerSelected(QString uuid, QString collectionuuid) ;
     void jsmarkerMoved(QString uuid, QString collectionuuid, double lat, double lon) ;
-    void jsmarkerGeocoded(QString uuid, QString collectionuuid, QString address) ;
+    void jsmarkerGeocoded(QString uuid, QString collectionuuid, QString address, QString door, QString street, QString town, QString state, QString country, QString postcode) ;
     void jsSearchResultsReady(QString placeid, double lat, double lon, QString address, QString phone) ;
     void jsmapMoved(double lat, double lon, int zoom) ;
     void jsSearchFailed(QString error) ;
@@ -47,7 +47,9 @@ public:
 
     // Search Functions
     void searchLocation(QString address) ;
-    void searchLatLon(double lat, double lon) ;
+
+    // Geocode Functions
+    void geocodeMarker(QString uuid, QString collectionuuid, bool forcegeocode=true) ;
 
     // Navigation Management
     void gotoCoordinates(double east, double north, int zoom=16) ;
@@ -62,7 +64,6 @@ public:
     void setMarkerCollection(QString uuid, QString collectionuuid) ;
     bool queryMarker(QString uuid, QString& collectionuuid, double *lat, double *lon, QString& addresstxt) ;
     void selectMarker(QString uuid) ;
-    void geocodeMarker(QString uuid, bool forcegeocode=true) ;
     void seekToMarker(QString uuid, int zoom) ;
 
 private:

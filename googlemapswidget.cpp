@@ -30,8 +30,8 @@ void GoogleMapsWidget::initialise(QString key, QString workingUuid)
     cachedWorkingCollectionUuid = workingUuid ;
 
     // Load the html for the page
-    QUrl url = QUrl("qrc://resources/google_maps.html") ;
-    QFile f(":/resources/google_maps.html") ;
+    QUrl url = QUrl("qrc:///googlemaps/google_maps.html") ;
+    QFile f(":/googlemaps/google_maps.html") ;
     f.open(QFile::ReadOnly|QFile::Text) ;
     QTextStream in(&f) ;
     QString html = in.readAll() ;
@@ -137,32 +137,6 @@ void GoogleMapsWidget::initialiseJavascript(QString uuid)
     runJavaScript(str) ;
 }
 
-//
-// Address search
-//
-
-// Search Functions
-void GoogleMapsWidget::searchLocation(QString address)
-{
-    QString str = QString("searchLocation(\"%1\");").arg(address.replace(' ','+')) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::searchLocation() =>" ;
-    qDebug() << str ;
-
-    runJavaScript(str) ;
-}
-
-void GoogleMapsWidget::searchLatLon(double lat, double lon)
-{
-    QString str = QString("searchLatLon(%1,%2);").arg(lat).arg(lon) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::searchLatLon() =>" ;
-    qDebug() << str ;
-
-    runJavaScript(str) ;
-}
 
 //
 // Javascript navigaion functions
@@ -229,17 +203,6 @@ void GoogleMapsWidget::selectMarker(QString uuid)
     runJavaScript(str) ;
 }
 
-void GoogleMapsWidget::geocodeMarker(QString uuid, bool forcegeocode)
-{
-
-    QString str = QString("geocodeMarker(\"%1\",%2);").arg(uuid).arg((forcegeocode?"true":"false")) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::geocodeMarker() =>" ;
-    qDebug() << str ;
-    runJavaScript(str) ;
-}
-
 
 void GoogleMapsWidget::seekToMarker(QString uuid, int zoom)
 {
@@ -293,17 +256,8 @@ void GoogleMapsWidget::jsmarkerMoved(QString uuid, QString collectionuuid, doubl
     qDebug() << "uuid = " << uuid ;
     qDebug() << "collectionuuid = " << collectionuuid ;
     qDebug() << "lat/lon = " << lat << "," << lon ;
-    geocodeMarker(uuid, true) ;
+    geocodeMarker(uuid, collectionuuid, true) ;
     emit markerMoved(uuid, collectionuuid, lat, lon) ;
-}
-
-void GoogleMapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString address)
-{
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsmarkerMoved() =>" ;
-    qDebug() << "uuid = " << uuid ;
-    qDebug() << "address = " << address ;
-    emit markerGeocoded(uuid, collectionuuid, address) ;
 }
 
 
@@ -314,10 +268,59 @@ void GoogleMapsWidget::jsmarkerSelected(QString uuid, QString collectionuuid)
     qDebug() << "uuid = " << uuid ;
     qDebug() << "collectionuuid = " << collectionuuid ;
 
-    geocodeMarker(uuid, false) ;
+    // TODO: Check if geocoding as actually necessary here
+    // As marker is geocoded once placed, and when moved
+    // geocodeMarker(uuid, collectionuuid, false) ;
+
     emit markerSelected(uuid, collectionuuid) ;
 }
 
+
+
+
+//
+// Geocoding
+//
+
+void GoogleMapsWidget::geocodeMarker(QString uuid, QString collectionuuid, bool forcegeocode)
+{
+
+    QString str = QString("geocodeMarker(\"%1\",\"%2\",%3);").arg(uuid).arg(collectionuuid).arg((forcegeocode?"true":"false")) ;
+
+    qDebug() << "" ;
+    qDebug() << "GoogleMapsWidget::geocodeMarker() =>" ;
+    qDebug() << str ;
+    runJavaScript(str) ;
+}
+
+void GoogleMapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode)
+{
+    qDebug() << "" ;
+    qDebug() << "GoogleMapsWidget::jsmarkerGeocoded() =>" ;
+    qDebug() << "uuid = " << uuid ;
+    qDebug() << "collectionuuid = " << collectionuuid ;
+    qDebug() << "address = " << formattedaddress << ", door = " << door << ", street = " << street << ", town= " << town << ", state = " << state << ", country = " << country << ", postcode = " << postcode;
+    emit markerGeocoded(uuid, collectionuuid, formattedaddress, door, street, town, state, country, postcode) ;
+}
+
+
+
+
+//
+// Address search
+//
+
+// Search Functions
+void GoogleMapsWidget::searchLocation(QString address)
+{
+    QString str = QString("searchLocation(\"%1\");").arg(address.replace(' ','+')) ;
+
+    qDebug() << "" ;
+    qDebug() << "GoogleMapsWidget::searchLocation() =>" ;
+    qDebug() << str ;
+
+    runJavaScript(str) ;
+}
 
 void GoogleMapsWidget::jsSearchResultsReady(QString placeid, double lat, double lon, QString address, QString phone)
 {
@@ -327,7 +330,7 @@ void GoogleMapsWidget::jsSearchResultsReady(QString placeid, double lat, double 
     qDebug() << "lat/lon: " << lat << ", " << lon;
     qDebug() << "address:" << address ;
     qDebug() << "phone:" << phone ;
-    emit searchResultsReady(placeid, lat, lon, address, phone) ;
+    emit searchResultsReady(lat, lon, address, phone) ;
 }
 
 void GoogleMapsWidget::jsSearchFailed(QString error)

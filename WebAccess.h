@@ -2,6 +2,8 @@
 // Pivot file for WebView / WebEngineView
 //
 
+#define WEBENGINE 1
+
 #ifdef WEBENGINE
 
 #include <QtWebEngineWidgets>

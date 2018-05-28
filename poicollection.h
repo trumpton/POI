@@ -4,16 +4,71 @@
 #include <QString>
 #include <QList>
 #include <QFile>
+#include <QDomDocument>
+
+//            //  OV2  GPXv1  GPXv3
+// TIME       //  no    yes    yes
+// ELEVATION  //  no    yes    yes
+// TITLE      //  yes   yes    yes
+// COMMENT    //  no    yes    yes
+// DESCR      //  no    yes    yes
+// DOOR       //  no    no     yes
+// STREET     //  no    no     yes
+// CITY       //  no    no     yes
+// STATE      //  no    no     yes
+// POSTCODE   //  no    no     yes
+// COUNTRY    //  no    no     yes
+// TYPE       //  no    yes    yes
+// SYMBOL     //  no    yes    yes
+// URL        //  no    yes    yes
+// PHONE1     //  yes   no     yes
+// PHONE2     //  no    no     yes
+// EMAIL      //  no    no     yes
 
 class PoiEntry {
+
+public:
+    typedef enum {
+
+        // Automatically Generated
+        AUTOTIME,
+        AUTOSTREET,
+        AUTOCOMMENT,
+
+        // Manually Edited
+        EDITEDTITLE,
+        EDITEDDESCR,
+        EDITEDDOOR,
+        EDITEDSTREET,
+        EDITEDCITY,
+        EDITEDSTATE,
+        EDITEDPOSTCODE,
+        EDITEDCOUNTRY,
+        EDITEDTYPE,
+        EDITEDSYMBOL,
+        EDITEDURL,
+        EDITEDPHONE1,
+        EDITEDPHONE2,
+        EDITEDEMAIL,
+
+        // Geocoded Results
+        GEOELEVATION,
+        GEODOOR,
+        GEOSTREET,
+        GEOCITY,
+        GEOSTATE,
+        GEOPOSTCODE,
+        GEOCOUNTRY,
+
+        // Flags
+        GEOCODED,
+
+        NUMFIELDTYPES
+    } FieldType ;
+
 private:
-    QString sPlaceId ;
     QString sUuid ;
-    QString sDescription ;
-    QString sAddress ;
-    QString sDoorNumber ;
-    QString sPhone ;
-    QString sDoor ;
+    QString sFields[NUMFIELDTYPES] ;
 
     double dLat ;
     double dLon ;
@@ -23,38 +78,34 @@ private:
     // Data Conversion
     long int arrayToLong(QByteArray data) ;
     QByteArray longToArray(long int data) ;
-
+    QString toUtf8(QByteArray ba) ;
 
 public:
     PoiEntry() ;
     bool isValid() ;
     bool isDirty() ;
+    void markAsClean() ;
+
+    void clear() ;
 
     // UUID, used to uniquely identify the POI
     void setUuid(QString uuid) ;
     const QString& uuid() ;
 
-    // POI Information (stored in OV2 files)
-    void setDescription(QString description) ;
-    void setPhone(QString phone) ;
-    void setDoor(QString door) ;
-    void setLatLon(double lat, double lon) ;
-    void setPlaceId(QString placeId) ;
+    // POI Information
+    void set(FieldType type, QString data) ;
+    const QString& get(FieldType type) ;
 
-    const QString& description() ;
-    const QString& door() ;
-    const QString& phone() ;
+    void setLatLon(double lat, double lon) ;
     double lat() ;
     double lon() ;
-    const QString& placeId() ;
 
-    // Google Geo lookup results (for reference)
-    void setAddress(QString address) ;
-    const QString& address() ;
-
-    // Stream read & write
-    bool readOv2(QFile& inputstream) ;
+    // OV2 Stream read & write
+    bool importOv2(QFile& inputstream) ;
     bool writeOv2(QFile& outputstream, int type=2) ;
+
+    // PoiEntry Copy
+    void copyFrom(PoiEntry& source) ;
 };
 
 class PoiCollection
@@ -78,8 +129,6 @@ public:
     int size() ;
     const QString& uuid() ;
     bool clear() ;
-    bool load() ;
-    bool save() ;
     bool isDirty() ;
     bool add(PoiEntry& newEntry) ;
     bool remove(QString uuid) ;
@@ -87,7 +136,23 @@ public:
     PoiEntry& find(QString uuid) ;
     PoiEntry& at(int i) ;
 
+    // Import Files into current poiList
+    bool importOv2(QString filename) ;
+
+    // Load and Save current PoiList
+    bool loadGpx(bool importing = false, QString filename = QString("")) ;
+    bool saveGpx(bool exporting = false, QString filename = QString("")) ;
+    bool saveOv2() ;
+
 private:
+
+    // Extract XML Data
+    bool extractXmlData(QDomNode n, const char *tag, PoiEntry::FieldType type, PoiEntry& entry) ;
+
+    // Store XML Data
+    bool storeXmlData(QDomDocument& doc, PoiEntry::FieldType type, PoiEntry& entry, QDomElement n, const char *tag, QString attribute = QString(""), QString attrval = QString("")) ;
+    bool storeXmlData(QDomDocument& doc, QString text, QDomElement element, const char *tag, QString attribute = QString(""), QString attrval = QString("")) ;
+
     void updateLastEdited() ;
 };
 

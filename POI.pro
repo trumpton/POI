@@ -4,13 +4,11 @@
 #
 #-------------------------------------------------
 
-QT += core gui network
-
-# Linux
-QT += webkitwidgets
+QT += core gui network xml
+QT += webenginewidgets
 
 # Windows
-# QT +=  webchannel webenginewidgets
+#QT +=  webchannel
 
 CONFIG += qml_debug
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -18,27 +16,35 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = POI
 TEMPLATE = app
 
+GIT_VERSION = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --always --tags)
+DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     googlemapswidget.cpp \
     poicollection.cpp \
     configuration.cpp \
-    tomtomwidget.cpp \
-    cookies.cpp
+    cookies.cpp \
+    prompt.cpp
 
 HEADERS  += mainwindow.h \
     googlemapswidget.h \
     poicollection.h \
     configuration.h \
-    tomtomwidget.h \
     WebAccess.h \
-    cookies.h
+    cookies.h \
+    apikeys.h \
+    urls.h \
+    prompt.h \
+    version.h
 
 FORMS    += mainwindow.ui \
-    configuration.ui
+    configuration.ui \
+    prompt.ui
 
 RESOURCES += \
-    resources.qrc
+    googlemaps.qrc \
+    icons.qrc
 
 OTHER_FILES +=
 

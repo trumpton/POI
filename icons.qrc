@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/marker-icon.ico</file>
+        <file>icons/copy.png</file>
+        <file>icons/delete.png</file>
+        <file>icons/done.png</file>
+        <file>icons/edit.png</file>
+        <file>icons/new.png</file>
+        <file>icons/save.png</file>
+        <file>icons/cut.png</file>
+        <file>icons/panelpin.png</file>
+        <file>icons/panelpin-error.png</file>
+    </qresource>
+</RCC>

@@ -152,16 +152,20 @@ bool MainWindow::updateForm()
     } else {
 
         ui->plainTextEdit_Description->setPlainText(pe.get(PoiEntry::EDITEDDESCR)) ;
+
         ui->lineEdit_title->setText(pe.get(PoiEntry::EDITEDTITLE)) ;
-        setLineEditText(ui->lineEdit_Door, pe, PoiEntry::EDITEDDOOR, PoiEntry::GEODOOR) ;
-        setLineEditText(ui->lineEdit_Street, pe, PoiEntry::EDITEDSTREET, PoiEntry::GEOSTREET) ;
-        setLineEditText(ui->lineEdit_City, pe, PoiEntry::EDITEDCITY, PoiEntry::GEOCITY) ;
-        setLineEditText(ui->lineEdit_State, pe, PoiEntry::EDITEDSTATE, PoiEntry::GEOSTATE) ;
-        setLineEditText(ui->lineEdit_Country, pe, PoiEntry::EDITEDCOUNTRY, PoiEntry::GEOCOUNTRY) ;
-        setLineEditText(ui->lineEdit_Postcode, pe, PoiEntry::EDITEDPOSTCODE, PoiEntry::GEOPOSTCODE) ;
+
+        setLineEditText(ui->lineEdit_Door, pe, PoiEntry::EDITEDDOOR, PoiEntry::GEODOOR, ui->label_DoorEdited, ui->label_DoorGeo) ;
+        setLineEditText(ui->lineEdit_Street, pe, PoiEntry::EDITEDSTREET, PoiEntry::GEOSTREET, ui->label_StreetEdited, ui->label_StreetGeo) ;
+        setLineEditText(ui->lineEdit_City, pe, PoiEntry::EDITEDCITY, PoiEntry::GEOCITY, ui->label_CityEdited, ui->label_CityGeo) ;
+        setLineEditText(ui->lineEdit_State, pe, PoiEntry::EDITEDSTATE, PoiEntry::GEOSTATE, ui->label_StateEdited, ui->label_StateGeo) ;
+        setLineEditText(ui->lineEdit_Country, pe, PoiEntry::EDITEDCOUNTRY, PoiEntry::GEOCOUNTRY, ui->label_CountryEdited, ui->label_CountryGeo) ;
+        setLineEditText(ui->lineEdit_Postcode, pe, PoiEntry::EDITEDPOSTCODE, PoiEntry::GEOPOSTCODE, ui->label_PostcodeEdited, ui->label_PostcodeGeo) ;
+
         ui->lineEdit_Phone1->setText(pe.get(PoiEntry::EDITEDPHONE1)) ;
         ui->lineEdit_Phone2->setText(pe.get(PoiEntry::EDITEDPHONE2)) ;
         ui->lineEdit_Type->setText(pe.get(PoiEntry::EDITEDTYPE)) ;
+
         if (pe.get(PoiEntry::GEOCODED).compare("yes")==0) {
             ui->label_MarkerPin->setVisible(true) ;
             ui->label_MarkerPinError->setVisible(false) ;
@@ -299,7 +303,7 @@ void MainWindow::on_lineEdit_Search_returnPressed()
 //
 
 
-void MainWindow::setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded)
+void MainWindow::setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded, QLabel *qledited, QLabel *qlgeo)
 {
     QPalette red, black ;
 
@@ -311,9 +315,13 @@ void MainWindow::setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::F
     if (!data.get(edited).isEmpty()) {
         control->setPalette(red);
         control->setText(data.get(edited)) ;
+        qledited->setVisible(true) ;
+        qlgeo->setVisible(false) ;
     } else {
         control->setPalette(black);
         control->setText(data.get(geocoded)) ;
+        qledited->setVisible(false) ;
+        qlgeo->setVisible(true) ;
     }
 
     refresh() ;
@@ -520,6 +528,7 @@ bool MainWindow::loadFiles()
     // Clear all data
     fileCollection.clear() ;
     ui->cbPOIFiles->clear() ;
+    merge.clear() ;
 
     // TODO: Search directory and iterate
     QString& poiFiles = configuration->configFolder() ;
@@ -534,6 +543,7 @@ bool MainWindow::loadFiles()
     QStringList files = path.entryList(QStringList(fileMasks), QDir::Files | QDir::NoSymLinks);
 
     ui->cbPOIFiles->addItem(" -- Select File -- ", "") ;
+    merge.addItem(" -- Select File -- ", "") ;
 
     for (int i=0; i<files.size(); i++) {
         QString& filename = files[i] ;
@@ -541,6 +551,7 @@ bool MainWindow::loadFiles()
         QString basename = filename ;
         if (rxd.indexIn(basename)>=0) basename=rxd.cap(1) ;
         ui->cbPOIFiles->addItem(basename, poiFiles + "/" + basename) ;
+        merge.addItem(basename, poiFiles + "/" + basename) ;
     }
 
     refresh() ;
@@ -799,7 +810,7 @@ void MainWindow::on_lineEdit_Door_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_Door->text().compare(pe.get(PoiEntry::GEODOOR))!=0) pe.set(PoiEntry::EDITEDDOOR, ui->lineEdit_Door->text()) ;
+        pe.set(PoiEntry::EDITEDDOOR, ui->lineEdit_Door->text()) ;
         refresh() ;
     }
 }
@@ -809,7 +820,7 @@ void MainWindow::on_lineEdit_Street_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_Street->text().compare(pe.get(PoiEntry::GEOSTREET))!=0) pe.set(PoiEntry::EDITEDSTREET, ui->lineEdit_Street->text()) ;
+        pe.set(PoiEntry::EDITEDSTREET, ui->lineEdit_Street->text()) ;
         refresh() ;
     }
 }
@@ -819,7 +830,7 @@ void MainWindow::on_lineEdit_City_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_City->text().compare(pe.get(PoiEntry::GEOCITY))!=0) pe.set(PoiEntry::EDITEDCITY, ui->lineEdit_City->text()) ;
+        pe.set(PoiEntry::EDITEDCITY, ui->lineEdit_City->text()) ;
         refresh() ;
     }
 }
@@ -829,7 +840,7 @@ void MainWindow::on_lineEdit_State_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_State->text().compare(pe.get(PoiEntry::GEOSTATE))!=0) pe.set(PoiEntry::EDITEDSTATE, ui->lineEdit_State->text()) ;
+        pe.set(PoiEntry::EDITEDSTATE, ui->lineEdit_State->text()) ;
         refresh() ;
     }
 }
@@ -839,7 +850,7 @@ void MainWindow::on_lineEdit_Postcode_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_Postcode->text().compare(pe.get(PoiEntry::GEOPOSTCODE))!=0) pe.set(PoiEntry::EDITEDPOSTCODE, ui->lineEdit_Postcode->text()) ;
+        pe.set(PoiEntry::EDITEDPOSTCODE, ui->lineEdit_Postcode->text()) ;
         refresh() ;
     }
 }
@@ -849,7 +860,7 @@ void MainWindow::on_lineEdit_Country_editingFinished()
 {
     PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
     if (pe.isValid()) {
-        if (ui->lineEdit_Country->text().compare(pe.get(PoiEntry::GEOCOUNTRY))!=0) pe.set(PoiEntry::EDITEDCOUNTRY, ui->lineEdit_Country->text()) ;
+        pe.set(PoiEntry::EDITEDCOUNTRY, ui->lineEdit_Country->text()) ;
         refresh() ;
     }
 }
@@ -977,4 +988,52 @@ void MainWindow::on_actionAuto_Geocode_triggered()
 void MainWindow::on_action_About_POI_triggered()
 {
     QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
+}
+
+void MainWindow::on_action_MergeWith_triggered()
+{
+    merge.exec() ;
+    QString& filename = merge.currentData() ;
+
+    if (filename.isEmpty()) {
+        QMessageBox::information(this, QString("POI"), QString("No files selected, merge aborted"), QMessageBox::Ok) ;
+    } else {
+        PoiCollection import ;
+
+        if (!import.loadGpx(false, filename)) {
+            QMessageBox::information(this, QString("POI"), QString("Error loading file"), QMessageBox::Ok) ;
+        } else {
+            int orgsize = fileCollection.size() ;
+            int impsize = import.size() ;
+            for (int i=0; i<impsize; i++) {
+                fileCollection.add(import.at(i)) ;
+            }
+            QMessageBox::information(this, QString("POI"), QString("Imported ") + QString::number(impsize) + QString(" new entries"), QMessageBox::Ok) ;
+            refresh(true) ;
+        }
+    }
+}
+
+void MainWindow::on_action_EditAll_triggered()
+{
+    while (fileCollection.size()>0) {
+        workingCollection.add(fileCollection.at(0)) ;
+        fileCollection.remove(fileCollection.at(0).uuid()) ;
+    }
+    refresh(true) ;
+}
+
+
+void MainWindow::on_action_EmptyClipboard_triggered()
+{
+    while (workingCollection.size()>0) {
+        workingCollection.remove(workingCollection.at(0).uuid()) ;
+    }
+    refresh(true) ;
+}
+
+void MainWindow::on_lineEdit_Door_returnPressed()
+{
+    ui->lineEdit_Door->editingFinished();
+    ui->listWorking->setFocus() ;
 }

@@ -4,6 +4,7 @@
 #include "googlemapswidget.h"
 #include "poicollection.h"
 #include "configuration.h"
+#include "merge.h"
 
 #include <QMainWindow>
 #include <QListWidget>
@@ -83,14 +84,25 @@ private slots:
 
     void on_action_About_POI_triggered();
 
+    void on_action_MergeWith_triggered();
+
+    void on_action_EditAll_triggered();
+
+    void on_action_EmptyClipboard_triggered();
+
+    void on_lineEdit_Door_returnPressed();
+
 private:
+
+    // Merge Dialog
+    Merge merge ;
 
     // Update the lists and entry form
     bool refresh(bool refreshMarkers = false, int zoom = 0) ;
 
 
     // Sets the line entry text data and colour
-    void setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded) ;
+    void setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded, QLabel *qledited, QLabel *qlgeo) ;
 
     // Refresh edit filds on the form
     bool updateForm() ;

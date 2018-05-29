@@ -448,7 +448,7 @@ bool PoiCollection::saveOv2()
     // Add Source Record (deleted record, lat=-180, lon=1)
     PoiEntry source ;
     source.setLatLon(-180.0, 1.0) ;
-    source.set(PoiEntry::EDITEDDESCR, QString("TomTom / Google Points of Interest Editor - www.trumpton.uk")) ;
+    source.set(PoiEntry::EDITEDDESCR, QString("POI Editor - www.trumpton.uk")) ;
     success = source.writeOv2(outputstream, 0) ;
 
     for (int i=poiList.size()-1; i>=0 && success; i--) {
@@ -518,8 +518,16 @@ bool PoiEntry::writeOv2(QFile& outputstream, int type)
     QString door = get(PoiEntry::EDITEDDOOR) ;
     QString title = get(PoiEntry::EDITEDTITLE) ;
     QString phone = get(PoiEntry::EDITEDPHONE1) ;
-    if (door.isEmpty()) door=get(PoiEntry::GEODOOR) ;
+    QString typesrc = get(PoiEntry::EDITEDTYPE) ;
 
+    // Extract abbreviation for type
+    QString enttype ;
+    bool lastchar=false ;
+    for (int i=0; i<typesrc.length(); i++) {
+        if (!lastchar && typesrc.at(i).isLetter()) enttype = enttype + typesrc.at(i).toUpper() ;
+        lastchar = typesrc.at(i).isLetter() ;
+    }
+    if (!enttype.isEmpty()) { title = enttype + ": " + title ; }
     if (!door.isEmpty()) { title = title + " [" + door + "]" ; }
     if (!phone.isEmpty()) { title = title  + ">" + phone ; }
 

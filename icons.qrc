@@ -10,5 +10,7 @@
         <file>icons/cut.png</file>
         <file>icons/panelpin.png</file>
         <file>icons/panelpin-error.png</file>
+        <file>icons/geomarker.png</file>
+        <file>icons/editedmarker.png</file>
     </qresource>
 </RCC>

@@ -25,7 +25,8 @@ SOURCES += main.cpp\
     poicollection.cpp \
     configuration.cpp \
     cookies.cpp \
-    prompt.cpp
+    prompt.cpp \
+    merge.cpp
 
 HEADERS  += mainwindow.h \
     googlemapswidget.h \
@@ -36,11 +37,14 @@ HEADERS  += mainwindow.h \
     apikeys.h \
     urls.h \
     prompt.h \
-    version.h
+    version.h \
+    merge.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \
-    prompt.ui
+    prompt.ui \
+    merge.ui \
+    merge.ui
 
 RESOURCES += \
     googlemaps.qrc \

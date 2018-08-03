@@ -9,6 +9,10 @@
 #include <QMainWindow>
 #include <QListWidget>
 
+
+#define PREFZOOM 17
+
+
 namespace Ui {
 class MainWindow;
 }
@@ -37,6 +41,8 @@ private slots:
     void on_lineEdit_Search_returnPressed();
 
     // Main menu handlers
+    void on_action_New_triggered();
+    void on_action_Open_triggered();
     void on_action_Save_triggered();
     void on_action_Setup_triggered();
     void on_action_Exit_triggered();
@@ -45,7 +51,6 @@ private slots:
 
     // Clipboard handlers
     void on_listWorking_itemClicked(QListWidgetItem *item);
-    void on_listWorking_itemDoubleClicked(QListWidgetItem *item);
     void on_btnNew_clicked();
     void on_btnStore_clicked();
     void on_btnDuplicate_clicked();
@@ -53,8 +58,6 @@ private slots:
 
     // File List Handler
     void on_listFile_itemClicked(QListWidgetItem *item);
-    void on_listFile_itemDoubleClicked(QListWidgetItem *item);
-    void on_cbPOIFiles_currentIndexChanged(int index);
     void on_action_LaunchTomTom_triggered();
     void on_btnEditFile_clicked();
     void on_btnCopyToClipboard_clicked();
@@ -72,25 +75,32 @@ private slots:
     void on_lineEdit_Url_editingFinished();
     void on_lineEdit_Phone1_editingFinished();
     void on_lineEdit_Phone2_editingFinished();
+    void on_lineEdit_Door_returnPressed();
 
-
-    void on_action_New_triggered();
-
-    void on_action_Delete_triggered();
-
-    void on_action_ImportTomTom_triggered();
+    // Import
+    void on_action_ImportGpx_triggered();
+    void on_action_ImportOv2_triggered();
+    void on_action_ImportGpxToClipboard_triggered();
 
     void on_actionAuto_Geocode_triggered();
-
     void on_action_About_POI_triggered();
-
-    void on_action_MergeWith_triggered();
-
     void on_action_EditAll_triggered();
-
     void on_action_EmptyClipboard_triggered();
 
-    void on_lineEdit_Door_returnPressed();
+
+    void on_btnUp_clicked();
+
+    void on_btnDown_clicked();
+
+    void on_NewTrackPoint_clicked();
+    void on_DeleteTrackPoint_clicked();
+    void on_action_ShowTrack_toggled(bool arg1);
+    void on_action_CreateTrackFromWaypoints_triggered();
+    void on_action_ReduceTrackPoints_triggered();
+
+    void on_action_SaveAs_triggered();
+
+    void on_comboBox_Filter_currentIndexChanged(int index);
 
 private:
 
@@ -98,7 +108,7 @@ private:
     Merge merge ;
 
     // Update the lists and entry form
-    bool refresh(bool refreshMarkers = false, int zoom = 0) ;
+    bool refresh(bool refreshMarkers = false, bool centreOnMarker = false, int zoom = 0) ;
 
 
     // Sets the line entry text data and colour
@@ -121,17 +131,25 @@ private:
 
     // Refresh the Lists
     bool updateLists() ;
-    bool updateList(PoiCollection *collection, QListWidget *widget) ;
+    bool updateList(PoiCollection *collection, QListWidget *widget, QString filterText = "") ;
 
     // Refresh the Lists Selection
-    bool updateListsSelection(bool refreshMarkers=false) ;
-    bool updateListSelection(PoiCollection *collection, QListWidget *widget, bool refreshMarkers=false) ;
+    bool updateListsSelection() ;
+    bool updateListSelection(PoiCollection *collection, QListWidget *widget) ;
+    bool updateSearchFilter() ;
+
+
+    // Refresh the Map
+    bool refreshMap() ;
+
 
     // Return currently selected UUID of the given list widget
     QString currentSelectionUuid(QListWidget *widget) ;
 
     // Search the Working and Current POI Lists and return match
     PoiEntry& findEntryByUuid(QString uuid, QString collectionUuid) ;
+    TrackEntry& findTrackEntryByUuid(QString uuid, QString collectionUuid) ;
+
 
     Ui::MainWindow *ui;
     Configuration *configuration ;

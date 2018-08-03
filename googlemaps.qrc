@@ -9,5 +9,15 @@
         <file alias="marker-red-dot.png">googlemaps/marker-red-dot.png</file>
         <file alias="marker-blue.png">googlemaps/marker-blue.png</file>
         <file alias="marker-blue-dot.png">googlemaps/marker-blue-dot.png</file>
+        <file>googlemaps/trackmarker-blue.png</file>
+        <file>googlemaps/trackmarker-blue-dot.png</file>
+        <file>googlemaps/trackmarker-purple.png</file>
+        <file>googlemaps/trackmarker-purple-dot.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>googlemaps/trackmarker-blue.png</file>
+        <file>googlemaps/trackmarker-blue-dot.png</file>
+        <file>googlemaps/trackmarker-purple.png</file>
+        <file>googlemaps/trackmarker-purple-dot.png</file>
     </qresource>
 </RCC>

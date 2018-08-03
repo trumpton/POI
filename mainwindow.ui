@@ -160,6 +160,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_Details">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -474,6 +477,9 @@
               </item>
               <item>
                <widget class="QLabel" name="label_MarkerPin">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>48</width>
@@ -583,7 +589,7 @@
               <item>
                <widget class="QLabel" name="label_StateEdited">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -662,7 +668,7 @@
               <item>
                <widget class="QLabel" name="label_PostcodeEdited">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="minimumSize">
                  <size>
@@ -923,18 +929,12 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
-           <widget class="QComboBox" name="cbPOIFiles">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
+           <widget class="QComboBox" name="comboBox_Filter">
+            <property name="editable">
+             <bool>false</bool>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
+            <property name="insertPolicy">
+             <enum>QComboBox::InsertAlphabetically</enum>
             </property>
            </widget>
           </item>
@@ -1027,6 +1027,64 @@
              </widget>
             </item>
             <item>
+             <widget class="QPushButton" name="btnUp">
+              <property name="minimumSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="icons.qrc">
+                <normaloff>:/icons/up.png</normaloff>:/icons/up.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnDown">
+              <property name="minimumSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="icons.qrc">
+                <normaloff>:/icons/down.png</normaloff>:/icons/down.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
              <spacer name="horizontalSpacer">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -1041,15 +1099,85 @@
             </item>
            </layout>
           </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Track</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
-           <widget class="QLabel" name="labelVersion">
-            <property name="text">
-             <string>v99</string>
+           <widget class="QPushButton" name="NewTrackPoint">
+            <property name="minimumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
             </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="icons.qrc">
+              <normaloff>:/icons/new.png</normaloff>:/icons/new.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
             </property>
            </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="DeleteTrackPoint">
+            <property name="minimumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="icons.qrc">
+              <normaloff>:/icons/delete.png</normaloff>:/icons/delete.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
@@ -1059,7 +1187,7 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>200</height>
+           <height>160</height>
           </size>
          </property>
          <property name="title">
@@ -1264,8 +1392,9 @@
      <string>&amp;File</string>
     </property>
     <addaction name="action_New"/>
+    <addaction name="action_Open"/>
     <addaction name="action_Save"/>
-    <addaction name="action_Delete"/>
+    <addaction name="action_SaveAs"/>
     <addaction name="separator"/>
     <addaction name="actionRefresh_Google_Map"/>
     <addaction name="separator"/>
@@ -1278,7 +1407,11 @@
     <property name="title">
      <string>&amp;Import</string>
     </property>
-    <addaction name="action_ImportTomTom"/>
+    <addaction name="action_ImportOv2"/>
+    <addaction name="action_ImportGpx"/>
+    <addaction name="separator"/>
+    <addaction name="action_ImportGpxToClipboard"/>
+    <addaction name="separator"/>
     <addaction name="actionAuto_Geocode"/>
    </widget>
    <widget class="QMenu" name="menu_About">
@@ -1297,12 +1430,22 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="action_MergeWith"/>
+    <addaction name="separator"/>
     <addaction name="action_EditAll"/>
     <addaction name="action_EmptyClipboard"/>
    </widget>
+   <widget class="QMenu" name="menu_Track">
+    <property name="title">
+     <string>&amp;Track</string>
+    </property>
+    <addaction name="action_ShowTrack"/>
+    <addaction name="action_CreateTrackFromWaypoints"/>
+    <addaction name="actionSnap"/>
+    <addaction name="action_ReduceTrackPoints"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menu_Track"/>
    <addaction name="menu_Import"/>
    <addaction name="menu_Export"/>
    <addaction name="menu_About"/>
@@ -1344,17 +1487,20 @@
     <string>&amp;Save</string>
    </property>
    <property name="shortcut">
-    <string>F2</string>
+    <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="action_ImportTomTom">
+  <action name="action_ImportOv2">
    <property name="text">
-    <string>&amp;TomTom</string>
+    <string>&amp;TomTom POI (OV2)</string>
    </property>
   </action>
   <action name="action_New">
    <property name="text">
     <string>&amp;New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="action_Delete">
@@ -1364,7 +1510,7 @@
   </action>
   <action name="actionAuto_Geocode">
    <property name="text">
-    <string>Auto &amp;Geocode</string>
+    <string>&amp;Auto Geocode</string>
    </property>
   </action>
   <action name="action_About_POI">
@@ -1377,11 +1523,6 @@
     <string>Launch &amp;Tom Tom</string>
    </property>
   </action>
-  <action name="action_MergeWith">
-   <property name="text">
-    <string>&amp;Merge With</string>
-   </property>
-  </action>
   <action name="action_EditAll">
    <property name="text">
     <string>Edit All</string>
@@ -1390,6 +1531,58 @@
   <action name="action_EmptyClipboard">
    <property name="text">
     <string>Empty Clipboard</string>
+   </property>
+  </action>
+  <action name="action_ImportGpxToClipboard">
+   <property name="text">
+    <string>Garmin to &amp;Clipboard (GPX)</string>
+   </property>
+  </action>
+  <action name="action_Open">
+   <property name="text">
+    <string>&amp;Open</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_ShowTrack">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Show Track</string>
+   </property>
+  </action>
+  <action name="action_CreateTrackFromWaypoints">
+   <property name="text">
+    <string>Create Track From Waypoints</string>
+   </property>
+  </action>
+  <action name="action_ReduceTrackPoints">
+   <property name="text">
+    <string>Reduce Track Points</string>
+   </property>
+  </action>
+  <action name="action_SaveAs">
+   <property name="text">
+    <string>Save &amp;As</string>
+   </property>
+  </action>
+  <action name="action_ImportGpx">
+   <property name="text">
+    <string>&amp;Garmin (GPX)</string>
+   </property>
+  </action>
+  <action name="actionSnap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap Track to Waypoints</string>
    </property>
   </action>
  </widget>

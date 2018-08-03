@@ -6,12 +6,15 @@
 //       necessarily assigned to the correct query.  Need a query identifier which
 //       is returned with the response - i.e. the uuid.
 
+
 //
-// TODO: When using the duplicate on the file list, the red working copy can be behind.
-//       Selected item shouldalways be on the top.  Fix this in javascript 'selectmarker'
-//       Hopefully there's a bring to front, otherwise, it's remember where you were, and
-//       draw the selected one last.
+// BUG: Select blue then green, and form fields are grey
+//      Select red then green, and some form fields are black when they should be disabled (grey)
 //
+
+//
+// TODO: Export as OV2 aswell if there are no track points
+//       Otherwise, just export as gpx
 //
 
 
@@ -21,12 +24,9 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QRegExp>
+#include <QStringList>
 #include "apikeys.h"
-#include "urls.h"
 #include "prompt.h"
-#include "version.h"
-
-#define PREFZOOM 17
 
 // TODO:
 //
@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Configure and Load Web Pages
     QString key = configuration->key() ;
     if (key.isEmpty()) key=QString(GOOGLEAPIKEY) ;
-    ui->googlemapsWebView->initialise(key, workingCollection.uuid()) ;
+    ui->googlemapsWebView->initialise(key, workingCollection.uuid(), fileCollection.trackUuid()) ;
 
     // TODO: Shouldn't need these
     ui->googlemapsWebView->clearCookies() ;
@@ -65,12 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->googlemapsWebView, &GoogleMapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
     connect(ui->googlemapsWebView, &GoogleMapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
 
-    // POI Files
-    while (!loadFiles()) {
-        // TODO: Prompt for setup
-        on_action_Setup_triggered() ;
-    }
-
+    refresh() ;
 }
 
 MainWindow::~MainWindow()
@@ -80,6 +75,32 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// Find Functions
+//
+
+PoiEntry& MainWindow::findEntryByUuid(QString uuid, QString collectionUuid)
+{
+    if (collectionUuid == fileCollection.uuid()) {
+        PoiEntry& pl=fileCollection.find(uuid) ;
+        if (pl.isValid()) return pl ;
+    }
+    PoiEntry& wl=workingCollection.find(uuid) ;
+    return wl ;
+}
+
+TrackEntry& MainWindow::findTrackEntryByUuid(QString uuid, QString collectionUuid)
+{
+    return fileCollection.findTrack(uuid) ;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Save Function
+//
+
 void MainWindow::saveCollection(bool autoyes)
 {
     if (fileCollection.isDirty()) {
@@ -88,13 +109,39 @@ void MainWindow::saveCollection(bool autoyes)
             reply = QMessageBox::Yes ;
         } else {
             reply = QMessageBox::question(this,
-                "POI Save", "File as been edited, do you want to save?",
+                "POI", "File as been edited, do you want to save?",
                  QMessageBox::Yes|QMessageBox::No);
         }
         if (reply == QMessageBox::Yes) {
-            fileCollection.saveGpx(false) ;
-            fileCollection.saveGpx(true) ;
-            fileCollection.saveOv2() ;
+
+            if (fileCollection.filename().isEmpty()) {
+
+                // Get filename
+                QString filename = QFileDialog::getSaveFileName(this, QString("Save File"), QString(""), QString("GPX Files (*.gpx)")) ;
+
+                // Add extension if missing
+                QRegularExpression re(".*\\.gpx", QRegularExpression::CaseInsensitiveOption) ;
+                if (!re.match(filename).hasMatch()) {
+                    filename = filename + QString(".gpx") ;
+                }
+
+                QFile f(filename) ;
+
+                if (!f.exists() ||
+                    QMessageBox::question(this, "POI", "Do you wish to overwrite this file?",
+                                          QMessageBox::Yes|QMessageBox::No)==QMessageBox::Yes) {
+
+                    fileCollection.setFilename(filename) ;
+                }
+
+            }
+
+            if (!fileCollection.filename().isEmpty()) {
+
+                fileCollection.saveGpx() ;
+                if (fileCollection.trackSize()==0) fileCollection.saveOv2() ;
+
+            }
         }
     }
 }
@@ -104,18 +151,82 @@ void MainWindow::saveCollection(bool autoyes)
 // Refresh the screen
 //
 
-
-bool MainWindow::refresh(bool refreshMarkers, int zoom)
+bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
 {
     static int mutex=0 ;
+
     if (++mutex>1) {
+
         mutex--;
         return false ;
+
     } else {
-        updateLists() ;
-        updateListsSelection(refreshMarkers) ;
-        updateForm() ;
-        updateMapSelection(zoom) ;
+
+        // Re-populate lists
+        updateSearchFilter() ;
+        updateList(&workingCollection, ui->listWorking) ;
+        updateList(&fileCollection, ui->listFile, ui->comboBox_Filter->currentText()) ;
+
+        // Redraw the Map
+        if (refreshMarkers) refreshMap() ;
+
+        // Centre and zoom
+        if (centreOnMarker) updateMapSelection(zoom) ;
+
+        // Update Lists and Edit Box
+
+        // Edit Details
+        ui->groupBox_Details->setEnabled(false) ;
+        ui->groupBox_Details->setVisible(false) ;
+
+        // File Collection
+        ui->btnEditFile->setEnabled(false) ;
+        ui->btnCopyToClipboard->setEnabled(false) ;
+        ui->btnDown->setEnabled(false) ;
+        ui->btnUp->setEnabled(false) ;
+
+        // Working Collection
+        ui->btnNew->setEnabled(true) ;
+        ui->btnStore->setEnabled(false) ;
+        ui->btnDuplicate->setEnabled(false) ;
+        ui->btnDelete->setEnabled(false) ;
+
+        if (updateListSelection(&workingCollection, ui->listWorking)) {
+
+            updateForm() ;
+            ui->groupBox_Details->setEnabled(true) ;
+            ui->groupBox_Details->setVisible(true) ;
+            ui->btnStore->setEnabled(true) ;
+            ui->btnDuplicate->setEnabled(false) ;
+            ui->btnDelete->setEnabled(false) ;
+
+        } else if (updateListSelection(&fileCollection, ui->listFile)) {
+
+            updateForm() ;
+            ui->groupBox_Details->setVisible(true) ;
+            ui->btnEditFile->setEnabled(true) ;
+            ui->btnCopyToClipboard->setEnabled(true) ;
+            if (ui->action_ShowTrack->isChecked()) {
+                ui->btnDown->setEnabled(true) ;
+                ui->btnUp->setEnabled(true) ;
+            }
+        }
+
+        // Track Edit Buttons
+        if (thisCollectionUuid.compare(fileCollection.trackUuid())==0) {
+            ui->NewTrackPoint->setEnabled(true) ;
+            ui->DeleteTrackPoint->setEnabled(true) ;
+        } else {
+            ui->NewTrackPoint->setEnabled(false) ;
+            ui->DeleteTrackPoint->setEnabled(false) ;
+        }
+
+        // Menu Enables
+        ui->action_CreateTrackFromWaypoints->setEnabled(fileCollection.size()>=2) ;
+        ui->action_ReduceTrackPoints->setEnabled(fileCollection.trackSize()>0) ;
+        ui->action_ShowTrack->setEnabled(fileCollection.size()>0) ;
+        ui->action_EmptyClipboard->setEnabled(workingCollection.size()>0) ;
+
         mutex-- ;
         return true ;
     }
@@ -128,7 +239,6 @@ bool MainWindow::updateMapSelection(int zoom)
     if (!thisUuid.isEmpty()) ui->googlemapsWebView->seekToMarker(thisUuid, zoom) ;
     return true ;
 }
-
 
 bool MainWindow::updateForm()
 {
@@ -178,42 +288,87 @@ bool MainWindow::updateForm()
     }
 }
 
-
-bool MainWindow::updateLists()
+bool MainWindow::updateSearchFilter()
 {
-    bool resp=false ;
-    if (updateList(&workingCollection, ui->listWorking)) { resp=true ; }
-    if (updateList(&fileCollection, ui->listFile)) { resp=true ; }
-    return resp ;
+
+        QStringList filterEntries ;
+        for (int i=0; i<fileCollection.size(); i++) {
+            QRegExp re("[^a-zA-Z0-9]") ;
+            PoiEntry& file = fileCollection.at(i) ;
+            QString type = file.get(PoiEntry::EDITEDTYPE) ;
+            QStringList ents = type.replace(re, " ").toLower().split(" ") ;
+            for (int j=0; j<ents.size(); j++) {
+                QString ent = ents.at(j) ;
+                if (!ent.isEmpty()) {
+                    // Capitalise
+                    ent.replace(0, 1, ent.at(0).toUpper()) ;
+                    // Search if already exists
+                    bool found = false ;
+                    for (int k=0; k<filterEntries.size(); k++) {
+                        if (filterEntries.at(k).compare(ent)==0) found=true ;
+                    }
+                    // Add entry to list
+                    if (!found) {
+                        filterEntries.append(ent) ;
+                    }
+                }
+            }
+        }
+
+        filterEntries.sort() ;
+
+        ui->comboBox_Filter->blockSignals(true) ;
+        QString currentText = ui->comboBox_Filter->currentText() ;
+        ui->comboBox_Filter->clear() ;
+        ui->comboBox_Filter->addItem("") ;
+
+        for (int i=0; i<filterEntries.size(); i++) {
+            ui->comboBox_Filter->addItem(filterEntries.at(i));
+            if (filterEntries.at(i).compare(currentText)==0) {
+                ui->comboBox_Filter->setCurrentIndex(i+1);
+            }
+        }
+
+        ui->comboBox_Filter->blockSignals(false) ;
 }
 
-
-bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget)
+bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QString filterText)
 {
     if (collection==NULL || widget==NULL) return false ;
 
     widget->blockSignals(true) ;
     widget->clear() ;
 
+    filterText = filterText.toLower() ;
+
     // Populate List
     int size = collection->size() ;
     for (int i=0; i<size; i++) {
-        QListWidgetItem *item = new QListWidgetItem(collection->at(i).get(PoiEntry::EDITEDTITLE)) ;
-        QString uuid = collection->at(i).uuid() ;
-        QVariant variant(uuid) ;
-        item->setData(Qt::UserRole, variant) ;
+        QString type = collection->at(i).get(PoiEntry::EDITEDTYPE).toLower() ;
 
-        if (collection->at(i).isDirty()) {
-            item->setForeground(Qt::red);
+        if (filterText.isEmpty() || type.contains(filterText)) {
+
+            QString title = collection->at(i).get(PoiEntry::EDITEDTITLE) ;
+            QString sequence ;
+            if (ui->action_ShowTrack->isChecked()) {
+                sequence = QString("%1").arg(collection->at(i).sequence()/2, 2) + QString(": ");
+            }
+            QListWidgetItem *item = new QListWidgetItem(sequence + title) ;
+            QString uuid = collection->at(i).uuid() ;
+            QVariant variant(uuid) ;
+            item->setData(Qt::UserRole, variant) ;
+
+            if (collection->at(i).isDirty()) {
+                item->setForeground(Qt::red);
+            }
+
+            widget->addItem(item) ;
+
+            if (uuid.compare(thisUuid)==0) {
+                item->setSelected(true) ;
+                widget->setCurrentItem(item) ;
+            }
         }
-
-        widget->addItem(item) ;
-
-        if (uuid.compare(thisUuid)==0) {
-            item->setSelected(true) ;
-            widget->setCurrentItem(item) ;
-        }
-
     }
 
     widget->blockSignals(false) ;
@@ -221,29 +376,7 @@ bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget)
 }
 
 
-bool MainWindow::updateListsSelection(bool refreshMarkers)
-{
-    bool resp=false ;
-    if (refreshMarkers) ui->googlemapsWebView->removeAllMarkers() ;
-
-    if (updateListSelection(&workingCollection, ui->listWorking, refreshMarkers)) {
-        ui->groupBox_Details->setEnabled(true) ;
-        ui->groupBox_Details->setVisible(true) ;
-        resp=true ;
-    }
-    if (updateListSelection(&fileCollection, ui->listFile, refreshMarkers)) {
-        ui->groupBox_Details->setEnabled(false) ;
-        ui->groupBox_Details->setVisible(true) ;
-        resp=true ;
-    }
-    if (!resp) {
-        ui->groupBox_Details->setEnabled(false) ;
-        ui->groupBox_Details->setVisible(false) ;
-    }
-    return resp ;
-}
-
-bool MainWindow::updateListSelection(PoiCollection *collection, QListWidget *widget, bool refreshMarkers)
+bool MainWindow::updateListSelection(PoiCollection *collection, QListWidget *widget)
 {
     bool foundUuid=false ;
     if (collection==NULL || widget==NULL) return false ;
@@ -269,17 +402,46 @@ bool MainWindow::updateListSelection(PoiCollection *collection, QListWidget *wid
             return false ;
         }
 
-        if (refreshMarkers)
-            ui->googlemapsWebView->setMarker(ent.uuid(),
-              collection->uuid(),
-              ent.lat(),
-              ent.lon(),
-              ent.get(PoiEntry::EDITEDTITLE)) ;
     }
 
     return foundUuid ;
 }
 
+
+bool MainWindow::refreshMap()
+{
+    ui->googlemapsWebView->removeAllMarkers() ;
+    for (int i=0, ni=workingCollection.size(); i<ni; i++) {
+        PoiEntry& ent = workingCollection.at(i) ;
+        ui->googlemapsWebView->setMarker(ent.uuid(),
+          workingCollection.uuid(),
+          ent.lat(),
+          ent.lon(),
+          ent.get(PoiEntry::EDITEDTITLE),
+          ent.sequence()) ;
+    }
+    for (int i=0, ni=fileCollection.size(); i<ni; i++) {
+        PoiEntry& ent = fileCollection.at(i) ;
+        ui->googlemapsWebView->setMarker(ent.uuid(),
+          fileCollection.uuid(),
+          ent.lat(),
+          ent.lon(),
+          ent.get(PoiEntry::EDITEDTITLE),
+          ent.sequence()) ;
+    }
+    for (int i=0, ni=fileCollection.trackSize(); i<ni; i++) {
+        TrackEntry& ent = fileCollection.trackAt(i) ;
+        ui->googlemapsWebView->setMarker(ent.uuid(),
+          fileCollection.trackUuid(),
+          ent.lat(),
+          ent.lon(),
+          QString(""),
+          ent.sequence()) ;
+    }
+    ui->googlemapsWebView->showTracks(ui->action_ShowTrack->isChecked());
+    ui->googlemapsWebView->selectMarker(thisUuid);
+    return true ;
+}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -297,743 +459,8 @@ void MainWindow::on_lineEdit_Search_returnPressed()
     on_btnFind_pressed() ;
 }
 
-//////////////////////////////////////////////////////////////////////////
-//
-// Manage / sync data between edit fields and lists
-//
 
-
-void MainWindow::setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded, QLabel *qledited, QLabel *qlgeo)
+void MainWindow::on_comboBox_Filter_currentIndexChanged(int index)
 {
-    QPalette red, black ;
-
-    if (ui->groupBox_Details->isEnabled()) {
-        red.setColor(QPalette::Text,Qt::red);
-        black.setColor(QPalette::Text,Qt::black);
-    }
-
-    if (!data.get(edited).isEmpty()) {
-        control->setPalette(red);
-        control->setText(data.get(edited)) ;
-        qledited->setVisible(true) ;
-        qlgeo->setVisible(false) ;
-    } else {
-        control->setPalette(black);
-        control->setText(data.get(geocoded)) ;
-        qledited->setVisible(false) ;
-        qlgeo->setVisible(true) ;
-    }
-
-    refresh() ;
-}
-
-
-QString MainWindow::currentSelectionUuid(QListWidget *widget)
-{
-    QList<QListWidgetItem *>items = widget->selectedItems() ;
-    if (items.size()>0) {
-        return items[0]->data(Qt::UserRole).toString() ;
-    } else {
-        return QString("") ;
-    }
-}
-
-PoiEntry& MainWindow::findEntryByUuid(QString uuid, QString collectionUuid)
-{
-    if (collectionUuid == fileCollection.uuid()) {
-        PoiEntry& pl=fileCollection.find(uuid) ;
-        if (pl.isValid()) return pl ;
-    }
-    PoiEntry& wl=workingCollection.find(uuid) ;
-    return wl ;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// Clipboard Functions
-//
-
-void MainWindow::on_listWorking_itemClicked(QListWidgetItem *item)
-{
-    thisUuid = item->data(Qt::UserRole).toString() ;
-    thisCollectionUuid = workingCollection.uuid() ;
-
-    PoiEntry& currentEntry = workingCollection.find(thisUuid) ;
-    if (currentEntry.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-        ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
-    }
-
-    refresh() ;
-    ui->googlemapsWebView->selectMarker(thisUuid) ;
-}
-
-
-void MainWindow::on_listWorking_itemDoubleClicked(QListWidgetItem *item)
-{
-    on_listWorking_itemClicked(item) ;
-    updateMapSelection(PREFZOOM) ;
-}
-
-void MainWindow::on_btnStore_clicked()
-{
-    if (fileCollection.filename().isEmpty()) return ;
-
-    QString selection = currentSelectionUuid(ui->listWorking) ;
-    if (!selection.isEmpty()) {
-
-        // Get the item details
-        thisUuid = selection ;
-        thisCollectionUuid = fileCollection.uuid() ;
-
-        // Move the entry
-        fileCollection.add(workingCollection.find(thisUuid)) ;
-        workingCollection.remove(thisUuid) ;
-
-        // Modify the google map record
-        ui->googlemapsWebView->setMarkerCollection(thisUuid, thisCollectionUuid) ;
-
-        refresh() ;
-
-    }
-}
-
-void MainWindow::on_btnDuplicate_clicked()
-{
-    QString selection = currentSelectionUuid(ui->listWorking) ;
-
-    if (!selection.isEmpty()) {
-
-        PoiEntry newEntry ;
-        PoiEntry& currentEntry = workingCollection.find(selection) ;
-
-        newEntry.copyFrom(currentEntry) ;
-
-        thisUuid = newEntry.uuid() ;
-        thisCollectionUuid = workingCollection.uuid() ;
-        workingCollection.add(newEntry) ;
-        ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE));
-
-        refresh() ;
-
-    }
-
-}
-
-void MainWindow::on_btnDelete_clicked()
-{
-    QString selection = currentSelectionUuid(ui->listWorking) ;
-
-    if (!selection.isEmpty()) {
-
-        workingCollection.remove(selection) ;
-        ui->googlemapsWebView->removeMarker(selection) ;
-
-        refresh() ;
-
-    }
-}
-
-void MainWindow::on_btnNew_clicked()
-{
-    double lat=ui->googlemapsWebView->getLat() ;
-    double lon=ui->googlemapsWebView->getLon() ;
-    PoiEntry newEntry ;
-
-    qDebug() << "" ;
-    qDebug() << "on_btnNew_clicked() ==>" ;
-    qDebug() << "lat: " << lat <<", lon:" << lon  ;
-
-    newEntry.set(PoiEntry::EDITEDTITLE, "New Entry") ;
-    newEntry.setLatLon(lat, lon) ;
-
-    thisUuid = newEntry.uuid() ;
-    thisCollectionUuid = workingCollection.uuid() ;
-    workingCollection.add(newEntry) ;
-    ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, "New Entry");
-    ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
-
-    refresh(false, PREFZOOM) ;
-
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// File List Functions
-//
-
-void MainWindow::on_action_Save_triggered()
-{
-    saveCollection(true) ;
-    refresh() ;
-}
-
-void MainWindow::on_action_New_triggered()
-{
-    QString& poiFiles = configuration->configFolder() ;
-    if (poiFiles.isEmpty()) {
-        // Open Configuration
-    } else {
-        Prompt p ;
-        p.setup("New Group", "Group Name", "Enter the name of the new group") ;
-        p.exec() ;
-
-        // Create Empty File
-        QString name = p.text().replace("/","").replace("\\","").replace("*","").replace("?","").replace(":","") ;
-        QString filebase = poiFiles + "/" + name ;
-        QFile f(filebase + ".poi") ;
-        f.open(QIODevice::WriteOnly) ;
-        f.close() ;
-
-        // Refresh Files
-        loadFiles() ;
-        refresh() ;
-
-        // Find the newly created file
-        for (int i=0; i<ui->cbPOIFiles->count(); i++) {
-            QString filename = ui->cbPOIFiles->itemData(i, Qt::UserRole).toString() ;
-            if (filename.compare(filebase)==0) {
-                ui->cbPOIFiles->setCurrentIndex(i) ;
-            }
-
-        }
-    }
-}
-
-void MainWindow::on_action_Delete_triggered()
-{
-    QString& poiFiles = configuration->configFolder() ;
-    if (!poiFiles.isEmpty()) {
-        if (QMessageBox::question(this, "Delete Group", "Are you sure you want to remove this group", QMessageBox::Yes|QMessageBox::No)!=QMessageBox::Yes)
-            return ;
-    }
-    int index = ui->cbPOIFiles->currentIndex() ;
-    QString filename = ui->cbPOIFiles->itemData(index, Qt::UserRole).toString() ;
-    QString deletedFilename = filename + ".bak" ;
-    QString ov2Filename = filename + ".ov2" ;
-    QString gpxFilename = filename + ".gpx" ;
-    QFile deletedfile(deletedFilename) ;
-    QFile ov2file(ov2Filename) ;
-    QFile gpxfile(gpxFilename) ;
-    deletedfile.remove() ;
-    ov2file.remove() ;
-    gpxfile.remove() ;
-    QFile::rename(filename + ".poi", deletedFilename) ;
-    loadFiles() ;
-}
-
-bool MainWindow::loadFiles()
-{
-    // Clear all data
-    fileCollection.clear() ;
-    ui->cbPOIFiles->clear() ;
-    merge.clear() ;
-
-    // TODO: Search directory and iterate
-    QString& poiFiles = configuration->configFolder() ;
-
-    if (poiFiles.isEmpty()) return false ;
-
-    QStringList fileMasks ;
-    fileMasks.append("*.poi") ;
-
-    QDir path = QDir(poiFiles);
-    path.setSorting(QDir::Name);
-    QStringList files = path.entryList(QStringList(fileMasks), QDir::Files | QDir::NoSymLinks);
-
-    ui->cbPOIFiles->addItem(" -- Select File -- ", "") ;
-    merge.addItem(" -- Select File -- ", "") ;
-
-    for (int i=0; i<files.size(); i++) {
-        QString& filename = files[i] ;
-        QRegExp rxd("^(.*)\\.poi");
-        QString basename = filename ;
-        if (rxd.indexIn(basename)>=0) basename=rxd.cap(1) ;
-        ui->cbPOIFiles->addItem(basename, poiFiles + "/" + basename) ;
-        merge.addItem(basename, poiFiles + "/" + basename) ;
-    }
-
-    refresh() ;
-    return true ;
-}
-
-void MainWindow::on_cbPOIFiles_currentIndexChanged(int index)
-{
-    QString filename = ui->cbPOIFiles->itemData(index, Qt::UserRole).toString() ;
-
-    saveCollection() ;
-    fileCollection.clear() ;
-
-    if (!filename.isEmpty()) {
-        fileCollection.setFilename(filename) ;
-        if (!fileCollection.loadGpx()) {
-            // TODO: error handle
-            // set index of list
-            thisCollectionUuid.clear() ;
-        } else {
-            thisCollectionUuid = fileCollection.uuid() ;
-        }
-    }
-    refresh(true) ;
-}
-
-void MainWindow::on_listFile_itemClicked(QListWidgetItem *item)
-{
-    thisUuid = item->data(Qt::UserRole).toString() ;
-    thisCollectionUuid = fileCollection.uuid() ;
-
-    PoiEntry& currentEntry = fileCollection.find(thisUuid) ;
-    if (currentEntry.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-        ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
-    }
-    refresh() ;
-    ui->googlemapsWebView->selectMarker(thisUuid) ;
-
-}
-
-void MainWindow::on_listFile_itemDoubleClicked(QListWidgetItem *item)
-{
-    on_listFile_itemClicked(item) ;
-    updateMapSelection(PREFZOOM) ;
-}
-
-void MainWindow::on_btnCopyToClipboard_clicked()
-{
-    QString selection = currentSelectionUuid(ui->listFile) ;
-
-    if (!selection.isEmpty()) {
-
-        PoiEntry newEntry ;
-        PoiEntry& currentEntry = fileCollection.find(selection) ;
-
-        for (int i=0; i<PoiEntry::NUMFIELDTYPES; i++) {
-            newEntry.set( (PoiEntry::FieldType)i, currentEntry.get( (PoiEntry::FieldType)i ) ) ;
-        }
-        newEntry.setLatLon(currentEntry.lat(), currentEntry.lon()) ;
-
-        thisUuid = newEntry.uuid() ;
-        thisCollectionUuid = workingCollection.uuid() ;
-        workingCollection.add(newEntry) ;
-        ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE));
-
-        refresh() ;
-
-    }
-}
-
-
-
-void MainWindow::on_btnEditFile_clicked()
-{
-    QString selection = currentSelectionUuid(ui->listFile) ;
-
-    if (!selection.isEmpty()) {
-
-        // Get the item details
-        thisUuid = selection ;
-        thisCollectionUuid = workingCollection.uuid() ;
-
-        // Move the entry
-        workingCollection.add(fileCollection.find(thisUuid)) ;
-        fileCollection.remove(thisUuid) ;
-
-        // Update the lists
-        refresh(true) ;
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// Callbacks from Map
-//
-
-//
-// callback - Address search results found
-//
-void MainWindow::mapCallbackSearchResultsReady(double lat, double lon, QString formattedAddress, QString phoneNumber)
-{
-    PoiEntry newEntry ;
-    QString searchtext ;
-
-    qDebug() << "" ;
-    qDebug() << "MainWindow::mapCallbackSearchResultsReady() ==>" ;
-    qDebug() << "lat: " << lat <<", lon:" << lon  ;
-    qDebug() << "phoneNumber" << phoneNumber ;
-
-    searchtext=ui->lineEdit_Search->text() ;
-
-    newEntry.set(PoiEntry::EDITEDTITLE, searchtext) ;
-    newEntry.set(PoiEntry::EDITEDDESCR, formattedAddress) ;
-    newEntry.set(PoiEntry::EDITEDPHONE1, phoneNumber) ;
-    newEntry.set(PoiEntry::GEOCODED, "no") ;
-    newEntry.setLatLon(lat, lon) ;
-
-    thisUuid = newEntry.uuid() ;
-    thisCollectionUuid = workingCollection.uuid() ;
-    workingCollection.add(newEntry) ;
-    ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, formattedAddress);
-    ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
-
-    refresh(false, PREFZOOM) ;
-
-}
-
-//
-// callback - No place could be found
-//
-void MainWindow::mapCallbackSearchFailed(QString error)
-{
-    qDebug() << "MainWindow::mapCallbackSearchResultsFailed(\"" << error << "\")" ;
-    QMessageBox::warning(this, tr("Search Error"), error) ;
-    ui->googlemapsWebView->removeAllMarkers() ;
-
-    thisUuid = "" ;
-    thisCollectionUuid = "" ;
-
-    refresh() ;
-}
-
-//
-// callback - selected and updated marker from map
-//
-void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, double lat, double lon)
-{
-    qDebug() << "MainWindow::mapCallbackMarkerMoved(\"" << uuid << ", " << collectionUuid << ", " << lat << ", " << lon << "\")" ;
-    PoiEntry& pe = findEntryByUuid(uuid, collectionUuid) ;
-    if (pe.isValid()) {
-        pe.setLatLon(lat, lon) ;
-        pe.set(PoiEntry::GEOCODED, "no") ;
-        ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true);
-        refresh() ;
-    }
-}
-
-void MainWindow::mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode)
-{
-    qDebug() << "MainWindow::mapCallbackMarkerGeocoded(\"" << uuid << ", \"" << formattedaddress << "\")" ;
-    PoiEntry& pe = findEntryByUuid(uuid, collectionUuid) ;
-    if (pe.isValid()) {
-        // Update record
-        pe.set(PoiEntry::AUTOCOMMENT, formattedaddress) ;
-        pe.set(PoiEntry::GEODOOR, door) ;
-        pe.set(PoiEntry::GEOSTREET, street) ;
-        pe.set(PoiEntry::GEOCITY, town) ;
-        pe.set(PoiEntry::GEOSTATE, state) ;
-        pe.set(PoiEntry::GEOCOUNTRY, country) ;
-        pe.set(PoiEntry::GEOPOSTCODE, postcode) ;
-        pe.set(PoiEntry::GEOCODED, "yes") ;
-        refresh() ;
-    }
-}
-
-
-
-//
-// callback - marker on map has been seelcted
-//
-void MainWindow::mapCallbackMarkerSelected(QString uuid, QString collectionUuid)
-{
-    qDebug() << "MainWindow::mapCallbackMarkerSelected(\"" << uuid << ", " << collectionUuid << "\")" ;
-    PoiEntry& pe = findEntryByUuid(uuid, collectionUuid) ;
-    if (pe.isValid()) {
-        thisUuid = uuid ;
-        thisCollectionUuid = collectionUuid ;
-        if (pe.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-            ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true);
-        }
-        refresh() ;
-    }
-}
-
-//
-// MENU HANDLERS
-//
-
-void MainWindow::on_action_Setup_triggered()
-{
-    configuration->exec() ;
-}
-
-void MainWindow::on_action_Exit_triggered()
-{
-    close() ;
-}
-
-void MainWindow::on_actionRefresh_Google_Map_triggered()
-{
-    ui->googlemapsWebView->reload() ;
-}
-
-
-void MainWindow::on_actionClear_Cookies_triggered()
-{
-    ui->googlemapsWebView->clearCookies() ;
-}
-
-
-void MainWindow::on_action_LaunchTomTom_triggered()
-{
-
-    QDesktopServices::openUrl(QString(TOMTOMURL)) ;
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// POI editing text field management
-//
-
-void MainWindow::on_plainTextEdit_Description_textChanged()
-{
-   PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-   if (pe.isValid()) {
-       pe.set(PoiEntry::EDITEDDESCR, ui->plainTextEdit_Description->toPlainText()) ;
-       refresh() ;
-   }
-
-}
-
-void MainWindow::on_lineEdit_title_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDTITLE, ui->lineEdit_title->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Door_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDDOOR, ui->lineEdit_Door->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Street_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDSTREET, ui->lineEdit_Street->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_City_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDCITY, ui->lineEdit_City->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_State_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDSTATE, ui->lineEdit_State->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Postcode_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDPOSTCODE, ui->lineEdit_Postcode->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Country_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDCOUNTRY, ui->lineEdit_Country->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Type_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDTYPE, ui->lineEdit_Type->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Url_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDURL, ui->lineEdit_Url->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Phone1_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDPHONE1, ui->lineEdit_Phone1->text()) ;
-        refresh() ;
-    }
-}
-
-
-void MainWindow::on_lineEdit_Phone2_editingFinished()
-{
-    PoiEntry& pe = findEntryByUuid(thisUuid, thisCollectionUuid) ;
-    if (pe.isValid()) {
-        pe.set(PoiEntry::EDITEDPHONE2, ui->lineEdit_Phone2->text()) ;
-        refresh() ;
-    }
-}
-
-
-
-
-void MainWindow::on_action_ImportTomTom_triggered()
-{
-    // Offer to save current collection
-    saveCollection(false) ;
-
-    // Clear the current list
-    fileCollection.clear() ;
-
-    // Ask for the name of the input file
-    QString importName = QFileDialog::getOpenFileName(this,
-        tr("Import Tom Tom OV2 File"), "", tr("OV2 Files (*.ov2)"));
-    if (importName.isEmpty()) return ;
-
-    // Import the file
-    bool cleanload = fileCollection.importOv2(importName) ;
-    if (fileCollection.size()==0) {
-
-        QMessageBox::information(this, "Import Failed", "The import failed - no points of interest found") ;
-        return ;
-
-    } else {
-
-        if (!cleanload) {
-            // Prompt for load, else exit
-            if (QMessageBox::question(this, "Partial Import", "The file is corrupt, and can only be partially loaded.  Do you wish to continue?", QMessageBox::Yes|QMessageBox::No)!=QMessageBox::Yes) {
-                return ;
-            }
-        }
-
-        // Create a New group
-        on_action_New_triggered() ;
-
-        // Re-load (so that the input is marked as dirty)
-        fileCollection.importOv2(importName) ;
-
-        refresh(true) ;
-
-    }
-
-}
-
-void MainWindow::on_actionAuto_Geocode_triggered()
-{
-    int collectionsize = fileCollection.size() ;
-    int geocodecount=0, geocodefailed=0 ;
-
-    QProgressDialog progress("Geocoding", "Abort", 0, collectionsize, this) ;
-    progress.setWindowModality(Qt::WindowModal);
-    progress.show() ;
-
-    for (int i=0; i<collectionsize && !progress.wasCanceled(); i++) {
-        int retries=0 ;
-        PoiEntry& ent = fileCollection.at(i) ;
-        while (ent.isValid() && ent.get(PoiEntry::GEOCODED).compare("yes")!=0 && retries++<5) {
-            if (retries==1) geocodecount++ ;
-            QString uuid = fileCollection.at(i).uuid() ;
-            QString collectionUuid = fileCollection.uuid() ;
-            ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true) ;
-            for (int j=0; j<(13+retries*2); j++) {
-                QThread::msleep(50) ;
-                QApplication::processEvents() ;
-            }
-        }
-        if (retries>=5) geocodefailed++ ;
-        progress.setValue(i) ;
-    }
-    progress.hide() ;
-
-    if (geocodecount==0) {
-        QMessageBox::information(this, QString("POI"), QString("No Geocoding was Required"), QMessageBox::Ok) ;
-    } else if (geocodefailed==0) {
-        QMessageBox::information(this, QString("POI"), QString("Geocoding Complete. ") + QString::number(geocodecount) + QString("entries geocoded"), QMessageBox::Ok) ;
-    } else {
-        QMessageBox::information(this, QString("POI"), QString("Geocoding Complete. ") + QString::number(geocodefailed) + QString("entries of ") + QString::number(geocodecount) + QString(" failed to geocode."), QMessageBox::Ok) ;
-    }
-}
-
-void MainWindow::on_action_About_POI_triggered()
-{
-    QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
-}
-
-void MainWindow::on_action_MergeWith_triggered()
-{
-    merge.exec() ;
-    QString& filename = merge.currentData() ;
-
-    if (filename.isEmpty()) {
-        QMessageBox::information(this, QString("POI"), QString("No files selected, merge aborted"), QMessageBox::Ok) ;
-    } else {
-        PoiCollection import ;
-
-        if (!import.loadGpx(false, filename)) {
-            QMessageBox::information(this, QString("POI"), QString("Error loading file"), QMessageBox::Ok) ;
-        } else {
-            int orgsize = fileCollection.size() ;
-            int impsize = import.size() ;
-            for (int i=0; i<impsize; i++) {
-                fileCollection.add(import.at(i)) ;
-            }
-            QMessageBox::information(this, QString("POI"), QString("Imported ") + QString::number(impsize) + QString(" new entries"), QMessageBox::Ok) ;
-            refresh(true) ;
-        }
-    }
-}
-
-void MainWindow::on_action_EditAll_triggered()
-{
-    while (fileCollection.size()>0) {
-        workingCollection.add(fileCollection.at(0)) ;
-        fileCollection.remove(fileCollection.at(0).uuid()) ;
-    }
-    refresh(true) ;
-}
-
-
-void MainWindow::on_action_EmptyClipboard_triggered()
-{
-    while (workingCollection.size()>0) {
-        workingCollection.remove(workingCollection.at(0).uuid()) ;
-    }
-    refresh(true) ;
-}
-
-void MainWindow::on_lineEdit_Door_returnPressed()
-{
-    ui->lineEdit_Door->editingFinished();
-    ui->listWorking->setFocus() ;
+    refresh(false) ;
 }

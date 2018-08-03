@@ -5,6 +5,7 @@
 #include <QList>
 #include <QFile>
 #include <QDomDocument>
+#include <QDateTime>
 
 //            //  OV2  GPXv1  GPXv3
 // TIME       //  no    yes    yes
@@ -74,6 +75,7 @@ private:
     double dLon ;
     bool valid ;
     bool dirty ;
+    int iSequence ;
 
     // Data Conversion
     long int arrayToLong(QByteArray data) ;
@@ -100,21 +102,63 @@ public:
     double lat() ;
     double lon() ;
 
+    // Route Information
+    void setSequence(int seq) ;
+    const int sequence() ;
+
     // OV2 Stream read & write
     bool importOv2(QFile& inputstream) ;
     bool writeOv2(QFile& outputstream, int type=2) ;
 
     // PoiEntry Copy
     void copyFrom(PoiEntry& source) ;
+
 };
+
+class TrackEntry
+{
+private:
+    double dLat ;
+    double dLon ;
+    double dElev ;
+    QDateTime tDate ;
+    QString sUuid ;
+    int iSequence ;
+    bool bValid ;
+    bool bDirty ;
+
+public:
+    TrackEntry() ;
+    ~TrackEntry() ;
+    void set(double lat, double lon, double elev, QDateTime date) ;
+    void setLatLon(double lat, double lon) ;
+    void setSequence(int sequence) ;
+    double lat() ;
+    double lon() ;
+    double elev() ;
+    bool isValid() ;
+    bool isDirty() ;
+    void markAsClean() ;
+    int sequence() ;
+    QString uuid() ;
+    QDateTime date() ;
+    double distanceFrom(TrackEntry& other) ;
+    double distanceFrom(PoiEntry& other) ;
+} ;
+
 
 class PoiCollection
 {
 private:
     QString sFilename ;
     QString sUuid ;
+    QString sTrackUuid ;
+
     QList<PoiEntry> poiList ;
+    QList<TrackEntry> trackList ;
     PoiEntry nullPoiEntry ;
+    TrackEntry nullTrackEntry ;
+
     bool bListDirty ;
     QString sLastEdited ;
     QString sLastSavedSequence ;
@@ -126,23 +170,43 @@ public:
     const QString& filename() ;
     void setVersion(QString version) ;
     const QString& getVersion() ;
-    int size() ;
-    const QString& uuid() ;
     bool clear() ;
     bool isDirty() ;
-    bool add(PoiEntry& newEntry) ;
-    bool remove(QString uuid) ;
     QString& getSequenceText() ;
+
+    const QString& uuid() ;
+    const QString& trackUuid() ;
+
+    bool add(PoiEntry& newEntry) ;
+    bool add(TrackEntry& newEntry) ;
+
+    bool remove(QString uuid) ;
+    bool removeTrack(QString uuid) ;
+
+    int size() ;
+    int trackSize() ;
+
     PoiEntry& find(QString uuid) ;
+    PoiEntry& findPrev(QString uuid) ;
+    PoiEntry& findNext(QString uuid) ;
+
+    TrackEntry& findTrack(QString uuid) ;
+    TrackEntry& findNextTrack(QString uuid) ;
+
     PoiEntry& at(int i) ;
+    TrackEntry& trackAt(int i) ;
+
+
+    // Sort the list by sequence number
+    void sort() ;
 
     // Import Files into current poiList
     bool importOv2(QString filename) ;
 
     // Load and Save current PoiList
-    bool loadGpx(bool importing = false, QString filename = QString("")) ;
-    bool saveGpx(bool exporting = false, QString filename = QString("")) ;
-    bool saveOv2() ;
+    bool loadGpx(QString filename = QString("")) ;
+    bool saveGpx(QString filename = QString("")) ;
+    bool saveOv2(QString filename = QString("")) ;
 
 private:
 

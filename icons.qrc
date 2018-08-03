@@ -12,5 +12,7 @@
         <file>icons/panelpin-error.png</file>
         <file>icons/geomarker.png</file>
         <file>icons/editedmarker.png</file>
+        <file>icons/down.png</file>
+        <file>icons/up.png</file>
     </qresource>
 </RCC>

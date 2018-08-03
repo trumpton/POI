@@ -4,7 +4,10 @@ var searchservice; // Setup by initialise
 var detailsservice; // Setup by initialise
 var geocoderservice; // Setup by initialise
 var collectionworking; // Setup by initialise
+var collectiontrack; // Setup by initialise
 
+var showlines ;
+var polyline ;
 var markers = [];
 
 var initialLat = 48.13;
@@ -12,32 +15,52 @@ var initialLon = 11.57;
 var initialZoom = 3;
 
 // https://sites.google.com/site/gmapsdevelopment/
-var iconworking = "qrc:///googlemaps/marker-red.png";
-var iconworkingselected = "qrc:///googlemaps/marker-red-dot.png";
-var iconfile = "qrc:///googlemaps/marker-green.png";
-var iconfileselected = "qrc:///googlemaps/marker-green-dot.png";
+var iconworking = { url: "qrc:///googlemaps/marker-red.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconworkingselected = { url: "qrc:///googlemaps/marker-red-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconfile = { url: "qrc:///googlemaps/marker-green.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconfileselected = { url: "qrc:///googlemaps/marker-green-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var icontrack = { url: "qrc:///googlemaps/trackmarker-blue.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
+var icontrackselected = { url: "qrc:///googlemaps/trackmarker-blue-dot.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
+
+// zindex
+var zIndexSelectedMarker = 30;
+var zIndexMarker = 20;
+var zIndexTrackPlot = 10;
+var zIndexMap = 0;
+
+// Updated from map moves
+var centre = null;
+var bounds = null;
+var zoom = 0;
 
 // Create Map
-function initialise(workinguuid) {
+function initialise(workinguuid, trackuuid) {
 
     var myOptions = {
         center: new google.maps.LatLng(initialLat, initialLon),
         zoom: initialZoom,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
-        panControl: true
+        panControl: true,
     };
+
+    showlines = false ;
+
+    // HACK
+    showlines = true ;
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
+    polyline = null ;
     searchservice = new google.maps.places.PlacesService(map);
     detailsservice = new google.maps.places.PlacesService(map);
     geocoderservice = new google.maps.Geocoder;
     collectionworking = workinguuid;
+    collectiontrack = trackuuid ;
 
-    if ("GoogleMapsWebViewWidget" in window) {
+    new QWebChannel(qt.webChannelTransport, function(channel) {
 
-        // WebView (set with addToJavaScriptWindowObject)
-        GoogleMapsWidget = GoogleMapsWebViewWidget;
+        // WebEngineView (set via channel)
+        GoogleMapsWidget = channel.objects.GoogleMapsWidget;
 
         map.addListener('center_changed', function() {
             handleMapMoved(map);
@@ -45,30 +68,20 @@ function initialise(workinguuid) {
         map.addListener('zoom_changed', function() {
             handleMapMoved(map);
         });
+        map.addListener('bounds_changed', function() {
+            handleMapMoved(map);
+        });
         GoogleMapsWidget.jsmapMoved(initialLat, initialLon, initialZoom);
 
-    } else {
-
-        new QWebChannel(qt.webChannelTransport, function(channel) {
-
-            // WebEngineView (set via channel)
-            GoogleMapsWidget = channel.objects.GoogleMapsWidget;
-
-            map.addListener('center_changed', function() {
-                handleMapMoved(map);
-            });
-            map.addListener('zoom_changed', function() {
-                handleMapMoved(map);
-            });
-            GoogleMapsWidget.jsmapMoved(initialLat, initialLon, initialZoom);
-
-        });
-    }
+    });
 
 }
 
-
-
+// Enable / disable lines for route
+function showTracks(enabled) {
+    showlines = enabled ;
+    drawLines() ;
+}
 
 // Search and response handler
 function searchLocation(searchstring) {
@@ -102,38 +115,72 @@ function handlerSearchLocationResults(results, status) {
 
 }
 
-
-
 // Navigation
-function gotoCoordinates(pos, zoom) {
-    if (zoom > 0) map.setZoom(zoom);
+function gotoCoordinates(pos, requiredzoom) {
+    if (requiredzoom > 0) map.setZoom(requiredzoom);
     map.setCenter(pos);
     handleMapMoved();
 }
 
+function seekToMarker(uuid, requiredzoom) {
+    var i = markers.length - 1;
+    while (i >= 0 && markers[i].uuid !== uuid) i--;
+    if (i >= 0) {
 
+        var update = false ;
+
+        if (zoom < requiredzoom-2 || zoom > requiredzoom+2) {
+            zoom = requiredzoom ;
+            update=true ;
+        }
+
+        var pos = markers[i].position;
+        if (!bounds || !bounds.contains(pos) ) {
+            update=true ;
+        }
+
+        if (update) {
+            gotoCoordinates(pos, zoom);
+        }
+    }
+}
 
 // Marker Management
-function setMarker(uuid, collectionuuid, lat, lon, address) {
+function setMarker(uuid, collectionuuid, lat, lon, address, sequence, drop) {
+
     var draggable = false;
-    if (collectionuuid == collectionworking) draggable = true;
+    if (collectionuuid === collectionworking) draggable = true;
+
     var marker = new google.maps.Marker({
         map: map,
         uuid: uuid,
         collectionuuid: collectionuuid,
-        zIndex: 1,
+        zIndex: zIndexMarker,
         position: new google.maps.LatLng(lat, lon),
         draggable: draggable,
         address: address,
-        animation: google.maps.Animation.DROP
+        sequence: sequence
     });
+
+    if (drop) {
+        marker.setAnimation(google.maps.Animation.DROP) ;
+    }
+
     if (collectionuuid === collectionworking) {
         marker.setIcon(iconworking);
+        marker.draggable = true;
+    } else if (collectionuuid === collectiontrack) {
+        marker.setIcon(icontrack);
+        marker.draggable = true;
     } else {
         marker.setIcon(iconfile);
+        marker.draggable = false;
     }
+
     removeMarker(uuid);
     markers.push(marker);
+    sortMarkers() ;
+
     google.maps.event.addListener(marker, 'click', function() {
         handleMarkerSelected(marker);
     });
@@ -144,11 +191,12 @@ function setMarker(uuid, collectionuuid, lat, lon, address) {
         handleMarkerMoved(marker);
     });
 
-    // TODO: Do we need to select and geocode new markers
-    //        selectMarker(uuid) ;
-    //        geocodeMarker(uuid) ;
 }
 
+function sortMarkers()
+{
+    markers.sort( function(a,b) { if (a.sequence < b.sequence) return -1 ; if (a.sequence > b.sequence) return 1 ; return 0 ; } ) ;
+}
 
 
 function setMarkerCollection(uuid, collectionuuid) {
@@ -156,7 +204,7 @@ function setMarkerCollection(uuid, collectionuuid) {
     while (i >= 0 && markers[i].uuid !== uuid) i--;
     if (i >= 0) {
         markers[i].collectionuuid = collectionuuid;
-        if (collectionuuid == collectionworking) {
+        if (collectionuuid === collectionworking || collectionuuid === collectiontrack) {
             markers[i].draggable = true;
         } else {
             markers[i].draggable = false;
@@ -165,54 +213,42 @@ function setMarkerCollection(uuid, collectionuuid) {
     selectMarker(uuid);
 }
 
-
-
 function selectMarker(uuid) {
 
     var selectedmarker = -1;
     var selectedisworking = false;
+    var selectedistrack = false;
 
     // Redraw non-selected marker, and identify selected
     for (var i = 0; i < markers.length; i++) {
+
         var selected = (markers[i].uuid === uuid);
         var working = (markers[i].collectionuuid === collectionworking);
+        var track = (markers[i].collectionuuid === collectiontrack);
+
         if (selected) {
-            selectedmarker = i;
-            selectedisworking = working;
+            // Set icon and zindex for selected marker
+            if (working) {
+                markers[i].setIcon(iconworkingselected);
+            } else if (track) {
+                markers[i].setIcon(icontrackselected)
+            } else {
+                markers[i].setIcon(iconfileselected);
+            }
+            markers[i].setZIndex(zIndexSelectedMarker);
         } else {
+            // Set marker to non-selected version
             if (working) {
                 markers[i].setIcon(iconworking);
+            } else if (track) {
+                markers[i].setIcon(icontrack)
             } else {
                 markers[i].setIcon(iconfile);
             }
-            markers[i].setZIndex(1);
+            markers[i].setZIndex(zIndexMarker);
         }
     }
-
-    // TODO: This marker must be brought to the front
-    // Re-draw selected marker
-    if (selectedmarker >= 0) {
-        if (selectedisworking) {
-            markers[selectedmarker].setIcon(iconworkingselected);
-        } else {
-            markers[selectedmarker].setIcon(iconfileselected);
-        }
-        markers[selectedmarker].setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
-    }
-
 }
-
-
-
-function seekToMarker(uuid, zoom) {
-    var i = markers.length - 1;
-    while (i >= 0 && markers[i].uuid !== uuid) i--;
-    if (i >= 0) {
-        var pos = markers[i].position;
-        gotoCoordinates(pos, zoom);
-    }
-}
-
 
 
 //
@@ -270,14 +306,14 @@ function handleGeocoderResults(pos, uuid, collectionuuid, results, status) {
             for (var k = 0; k < results[0].address_components[j].types.length; k++) {
                 var type = results[0].address_components[j].types[k];
                 if (type == "street_number") street_number = long_name;
-                else if (type == "route") route = long_name;
-                else if (type == "sublocality") sublocality = long_name;
-                else if (type == "locality") locality = long_name;
-                else if (type == "administrative_area_level_3") administrative_area_level_3 = long_name;
-                else if (type == "administrative_area_level_2") administrative_area_level_2 = long_name;
-                else if (type == "administrative_area_level_1") administrative_area_level_1 = long_name;
-                else if (type == "country") country = long_name;
-                else if (type == "postal_code") postcode = long_name;
+                else if (type === "route") route = long_name;
+                else if (type === "sublocality") sublocality = long_name;
+                else if (type === "locality") locality = long_name;
+                else if (type === "administrative_area_level_3") administrative_area_level_3 = long_name;
+                else if (type === "administrative_area_level_2") administrative_area_level_2 = long_name;
+                else if (type === "administrative_area_level_1") administrative_area_level_1 = long_name;
+                else if (type === "country") country = long_name;
+                else if (type === "postal_code") postcode = long_name;
             }
         }
 
@@ -292,18 +328,11 @@ function handleGeocoderResults(pos, uuid, collectionuuid, results, status) {
         if (administrative_area_level_2 != "") state = administrative_area_level_2 + ", " + state;
         if (administrative_area_level_3 != "") state = administrative_area_level_3 + ", " + state;
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !! !! !!
-        // TODO: Check where Emily Carrs House is listed - there appears to be another line in the format
-        // address =  "Emily Carr's House, Bear Ln, Oxford OX1 4EJ, UK" , door =  "" , street =  "Bear Lane" , town=  "Oxford" , state =  "Oxfordshire, England" , country =  "United Kingdom" , postcode =  "OX1 4EJ"
-
         if (typeof GoogleMapsWidget !== 'undefined') {
             GoogleMapsWidget.jsmarkerGeocoded(uuid, collectionuuid, formattedaddress, door, street, town, state, country, postcode);
         }
     }
 }
-
-
-
 
 function removeMarker(uuid) {
     var j = -1;
@@ -314,11 +343,10 @@ function removeMarker(uuid) {
     }
     if (j >= 0) {
         markers[j].setMap(null);
+        if (markers[j].collectionuuid === collectiontrack) drawLines() ;
         markers.splice(j, 1);
     }
 }
-
-
 
 
 function removeAllMarkers() {
@@ -326,28 +354,70 @@ function removeAllMarkers() {
         markers[i].setMap(null);
     }
     markers.length = 0;
+    drawLines() ;
 }
 
 
+// BUG: doesnt draw lines on start
+// BUG: seems to ignore order
+// BUG: leaves old lines there
+// BUG:
+
+// Line Drawing
+function drawLines() {
+
+    if (polyline) {
+        polyline.setMap(null) ;
+        delete polyline ;
+        polyline = null ;
+    }
+
+    GoogleMapsWidget.jsDebug("drawLines start") ;
+
+    if (showlines) {
+
+        var lineset = [] ;
+        for (var i=0; i<markers.length; i++) {
+            if (markers[i].collectionuuid === collectiontrack) {
+                var lat = markers[i].position.lat() ;
+                var lng = markers[i].position.lng() ;
+                lineset.push( { lat: lat, lng: lng } ) ;
+            }
+        }
+
+        if (lineset.length>1) {
+            polyline = new google.maps.Polyline({
+              path: lineset,
+              geodesic: true,
+              strokeColor: '#000080',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
+            });
+
+            polyline.setOptions({ zIndex: zIndexTrackPlot });
+            polyline.setMap(map);
+        }
+
+    }
+    GoogleMapsWidget.jsDebug("drawLines ok") ;
+}
 
 
 // Event Handlers / Dispatchers
 
 function handleMapMoved() {
-    var Loc = map.getCenter();
-    var zoom = map.getZoom();
+    centre = map.getCenter();
+    zoom = map.getZoom();
+    bounds =  map.getBounds();
     if (typeof GoogleMapsWidget !== 'undefined')
-        GoogleMapsWidget.jsmapMoved(Loc.lat(), Loc.lng(), zoom);
+        GoogleMapsWidget.jsmapMoved(centre.lat(), centre.lng(), zoom);
 }
-
-
 
 function handleMarkerMoved(marker) {
     var pos = marker.getPosition();
     GoogleMapsWidget.jsmarkerMoved(marker.uuid, marker.collectionuuid, pos.lat(), pos.lng());
+    if (marker.collectionuuid === collectiontrack) drawLines() ;
 }
-
-
 
 function handleMarkerSelected(marker) {
     selectMarker(marker.uuid);

@@ -16,6 +16,7 @@ class GoogleMapsWidget: public WebAccess
 private:
     QString apiKey ;
     QString cachedWorkingCollectionUuid ;
+    QString cachedTrackCollectionUuid ;
 
 signals:
     void mapMoved(double lat, double lon, int zoom) ;
@@ -33,6 +34,7 @@ public slots:
     void jsSearchResultsReady(QString placeid, double lat, double lon, QString address, QString phone) ;
     void jsmapMoved(double lat, double lon, int zoom) ;
     void jsSearchFailed(QString error) ;
+    void jsDebug(QString message) ;
 
     void authenticationRequired(const QUrl &requestUrl, QAuthenticator *auth) ;
     void proxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth, const QString &proxyHost) ;
@@ -42,8 +44,11 @@ public:
     ~GoogleMapsWidget() ;
 
     // Initialise key, workingcollection and load web page
-    void initialise(QString apiKey, QString workingUuid) ;
+    void initialise(QString apiKey, QString workingUuid, QString trackUuid) ;
     void clearCookies() ;
+
+    // Show Route Lines
+    void showTracks(bool enabled) ;
 
     // Search Functions
     void searchLocation(QString address) ;
@@ -58,7 +63,7 @@ public:
     int getZoom() ;
 
     // Marker Management
-    void setMarker(QString uuid, QString collectionuuid, double lat, double lon, QString address) ;
+    void setMarker(QString uuid, QString collectionuuid, double lat, double lon, QString address, int sequence, bool drop=false) ;
     void removeMarker(QString uuid) ;
     void removeAllMarkers() ;
     void setMarkerCollection(QString uuid, QString collectionuuid) ;
@@ -68,7 +73,7 @@ public:
 
 private:
     // Initialise Javascript and set working collection uuid
-    void initialiseJavascript(QString uuid) ;
+    void initialiseJavascript(QString uuid, QString trackUuid) ;
 
     void runJavaScript(QString command) ;
 

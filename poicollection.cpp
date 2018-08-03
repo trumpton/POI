@@ -4,6 +4,29 @@
 #include <QRegExp>
 #include <QDateTime>
 #include <QDebug>
+#include <math.h>
+
+
+// Returns distance between 2 coordinates in metres
+double _distanceFrom(double lat1, double lon1, double lat2, double lon2)
+{
+    double dlat, dlon, a, c ;
+
+    double R = 6371e3;
+    double d2r = 3.141592654 / 180 ;
+    double rlat1 = lat1 * d2r ;
+    double rlat2 = lat2 * d2r ;
+    double rlon1 = lon1 * d2r ;
+    double rlon2 = lon2 * d2r ;
+
+    dlat = rlat2-rlat1 ;
+    dlon = rlon2-rlon1 ;
+    a = sin(dlat/2) * sin(dlat/2) +
+            cos(rlat1) * cos(rlat2) * sin(dlon/2) * sin(dlon/2) ;
+    c = 2 * atan2(sqrt(a), sqrt(1-a)) ;
+
+    return R * c ;
+}
 
 // ///////////////////////////////////////////////////////
 //
@@ -19,6 +42,7 @@ void PoiEntry::clear() {
     sUuid = quuid.toString() ;
     valid=false ; dirty=false ;
     dLat=0 ; dLon=0 ;
+    iSequence = 0 ;
     for (int i=0; i<NUMFIELDTYPES; i++) {
         sFields[i].clear() ;
     }
@@ -46,6 +70,9 @@ void PoiEntry::setLatLon(double lat, double lon) { dLat = lat ; dLon = lon ; val
 double PoiEntry::lat() { return dLat ; }
 double PoiEntry::lon() { return dLon ; }
 
+void PoiEntry::setSequence(int seq) { iSequence = seq ; }
+const int PoiEntry::sequence() { return iSequence ; }
+
 
 // ///////////////////////////////////////////////////////
 //
@@ -54,6 +81,10 @@ double PoiEntry::lon() { return dLon ; }
 
 PoiCollection::PoiCollection()
 {
+    QUuid quuid = QUuid::createUuid() ;
+    sUuid = quuid.toString() ;
+    QUuid qtrackuuid = QUuid::createUuid() ;
+    sTrackUuid = qtrackuuid.toString() ;
     clear() ;
     updateLastEdited() ;
 }
@@ -76,9 +107,8 @@ void PoiCollection::updateLastEdited()
 bool PoiCollection::clear()
 {
     sFilename = "" ;
-    QUuid quuid = QUuid::createUuid() ;
-    sUuid = quuid.toString() ;
     poiList.clear() ;
+    trackList.clear() ;
     bListDirty=false ;
     sLastEdited = "" ;
     sLastSavedSequence = "" ;
@@ -86,17 +116,50 @@ bool PoiCollection::clear()
 }
 
 const QString& PoiCollection::uuid() { return sUuid ; }
+const QString& PoiCollection::trackUuid() { return sTrackUuid ; }
 
 void PoiCollection::setFilename(QString filename) { sFilename = filename ; }
 const QString& PoiCollection::filename() { return sFilename ; }
 
 bool PoiCollection::isDirty()
 {
-    bool dirty=false ;
+    bool dirty=bListDirty ;
     for (int i=poiList.size()-1; i>=0; i--) {
         dirty |= poiList[i].isDirty() ;
     }
-    return dirty || bListDirty;
+    for (int i=trackList.size()-1; i>=0; i--) {
+        dirty |= trackList[i].isDirty() ;
+    }
+    return dirty ;
+}
+
+bool poiLessThan (PoiEntry &v1, PoiEntry &v2)
+{
+        return v1.sequence() < v2.sequence() ;
+}
+
+bool trackLessThan (TrackEntry &v1, TrackEntry &v2)
+{
+        return v1.sequence() < v2.sequence() ;
+}
+
+void PoiCollection::sort()
+{
+    qSort(poiList.begin(), poiList.end(), poiLessThan) ;
+
+    int seq = 0 ;
+
+    for (int i=0; i<poiList.size(); i++) {
+        poiList[i].setSequence(seq) ;
+        seq+=2 ;
+    }
+
+    qSort(trackList.begin(), trackList.end(), trackLessThan) ;
+
+    for (int i=0; i<trackList.size(); i++) {
+        trackList[i].setSequence(seq) ;
+        seq+=2 ;
+    }
 }
 
 /***************************************************************************
@@ -165,13 +228,14 @@ bool PoiCollection::extractXmlData(QDomNode n, const char *tag, PoiEntry::FieldT
     return false ;
 }
 
-bool PoiCollection::loadGpx(bool importing, QString filename)
+bool PoiCollection::loadGpx(QString filename)
 {
-    if (filename.isEmpty()) filename = sFilename ;
-    if (importing) filename = filename + ".gpx" ;
-    else filename = filename + ".poi" ;
+    int seq = 0 ;
 
+    if (filename.isEmpty()) filename = sFilename ;
     if (filename.isEmpty()) return false ;
+
+    sFilename = filename ;
     poiList.clear() ;
 
     bool success=true ;
@@ -184,13 +248,14 @@ bool PoiCollection::loadGpx(bool importing, QString filename)
      QDomElement gpx = doc.firstChildElement("gpx") ;
      QDomNodeList wpt = gpx.elementsByTagName("wpt") ;
 
+     // Load Waypoints
+
      for (int i=0; i<wpt.size(); i++) {
 
          PoiEntry ent ;
 
          QDomNode n = wpt.item(i) ;
 
-         QDomNamedNodeMap attribs = n.attributes() ;
          QDomNode latnode = n.attributes().namedItem("lat") ;
          QDomNode lonnode = n.attributes().namedItem("lon") ;
 
@@ -255,10 +320,70 @@ bool PoiCollection::loadGpx(bool importing, QString filename)
             }
 
          }
+
+         // add Waypoint Sequence
+         ent.setSequence(seq) ; seq = seq + 2 ;
+
          // add to list
          ent.markAsClean() ;
          poiList.append(ent) ;
      }
+
+     // Load Track Segments
+     QDomNodeList trk = gpx.elementsByTagName("trk") ;
+
+     for (int i=0, in = trk.size(); i<in; i++) {
+
+        QDomNode tn = trk.item(i) ;
+        QDomNodeList trkseg = tn.toElement().elementsByTagName("trkseg") ;
+
+        for (int j=0, jn=trkseg.size(); j<jn; j++) {
+
+            QDomNode sn = trkseg.item(j) ;
+            QDomNodeList trkpt = sn.toElement().elementsByTagName("trkpt") ;
+
+            for (int k=0, kn=trkpt.size(); k<kn; k++) {
+
+                TrackEntry ent ;
+                QDomNode pn = trkpt.item(k) ;
+                QDomNode latnode = pn.attributes().namedItem("lat") ;
+                QDomNode lonnode = pn.attributes().namedItem("lon") ;
+
+                double lat=0.0, lon=0.0, elev=0.0 ;
+                QDateTime date = QDateTime() ;
+
+                if (latnode.isAttr()) lat = latnode.nodeValue().toDouble() ;
+                if (lonnode.isAttr()) lon = lonnode.nodeValue().toDouble() ;
+
+                QDomNode nelev = pn.firstChildElement("ele") ;
+                if (!nelev.isNull()) {
+                    QDomElement e = nelev.toElement() ;
+                    if (e.isElement()) {
+                        QString t = e.text() ;
+                        elev = t.toDouble() ;
+                    }
+                }
+
+                QDomNode ndate = pn.firstChildElement("time") ;
+                if (!ndate.isNull()) {
+                    QDomElement e = ndate.toElement() ;
+                    if (e.isElement()) {
+                        QString t = e.text() ;
+                        date = QDateTime::fromString(t, Qt::ISODate);
+                    }
+                }
+
+                ent.set(lat, lon, elev, date) ;
+
+                // add Track Sequence
+                ent.setSequence(seq) ; seq = seq + 2 ;
+
+                trackList.append(ent) ;
+
+            }
+        }
+    }
+
     bListDirty=false ;
     return success ;
 }
@@ -284,37 +409,31 @@ bool PoiCollection::storeXmlData(QDomDocument& doc, QString text, QDomElement el
     return true ;
 }
 
-bool PoiCollection::saveGpx(bool exporting, QString filename)
+bool PoiCollection::saveGpx(QString filename)
 {
-
-    if (filename.isEmpty()) filename = sFilename ;
-    if (filename.isEmpty()) return false ;
-
-    if (exporting) filename = filename + QString(".gpx") ;
-    else filename = filename + QString(".poi") ;
+    if (!filename.isEmpty()) sFilename = filename ;
+    if (sFilename.isEmpty()) return false ;
 
     bool success=true ;
 
     QDomDocument doc;
-     QFile file(filename);
+     QFile file(sFilename);
      if( !file.open( QIODevice::WriteOnly | QIODevice::Text ) )
          return false;
 
      QDomElement gpx = doc.createElement("gpx") ;
 
-     if (exporting) {
-         gpx.setAttribute("xmlns", "http://www.topografix.com/GPX/1/1") ;
-         gpx.setAttribute("xmlns:gpxx", "http://www.garmin.com/xmlschemas/GpxExtensions/v3") ;
-         gpx.setAttribute("xmlns:poix", "http://www.trumpton.uk/xmlschemas/GpxExtensions/v3") ;
-         gpx.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") ;
-         gpx.setAttribute("xsi:schemaLocation", "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensions/v3/GpxExtensionsv3.xsd") ;
-         gpx.setAttribute("version", "1.1") ;
-         gpx.setAttribute("creator", "trumpton.org") ;
-     }
+     gpx.setAttribute("xmlns", "http://www.topografix.com/GPX/1/1") ;
+     gpx.setAttribute("xmlns:gpxx", "http://www.garmin.com/xmlschemas/GpxExtensions/v3") ;
+     gpx.setAttribute("xmlns:poix", "http://www.trumpton.uk/xmlschemas/GpxExtensions/v3") ;
+     gpx.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") ;
+     gpx.setAttribute("xsi:schemaLocation", "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensions/v3/GpxExtensionsv3.xsd") ;
+     gpx.setAttribute("version", "1.1") ;
+     gpx.setAttribute("creator", "trumpton.org") ;
 
      for (int i=0; i<poiList.size(); i++) {
 
-         PoiEntry& ent = poiList[i] ;
+        PoiEntry& ent = poiList[i] ;
 
         QDomElement wpt = doc.createElement("wpt") ;
         QDomElement extension = doc.createElement("extension") ;
@@ -324,10 +443,10 @@ bool PoiCollection::saveGpx(bool exporting, QString filename)
 
         // Attach nodes in hierarchy
         gpx.appendChild(wpt) ;
-          wpt.appendChild(extension) ;
-            if (!exporting) extension.appendChild(poiext) ;
-            if (exporting) extension.appendChild(wptext) ;
-                wptext.appendChild(addr) ;
+        wpt.appendChild(extension) ;
+        extension.appendChild(poiext) ;
+        extension.appendChild(wptext) ;
+        wptext.appendChild(addr) ;
 
         // Set Lat/Lon
         wpt.setAttribute("lat", QString("%1").arg(ent.lat())) ;
@@ -414,32 +533,67 @@ bool PoiCollection::saveGpx(bool exporting, QString filename)
         storeXmlData(doc, country, addr, "gpxx::Country") ;
         storeXmlData(doc, postcode, addr, "gpxx::PostalCode") ;
 
-        if (!exporting) ent.markAsClean();
+        ent.markAsClean();
 
      }
+
+     if (trackList.size()>0) {
+
+         QDomElement trk = doc.createElement("trk") ;
+         gpx.appendChild(trk) ;
+         QDomElement trkseg = doc.createElement("trkseg") ;
+        trk.appendChild(trkseg) ;
+
+        for (int i=0; i<trackList.size(); i++) {
+            TrackEntry &ent = trackList[i] ;
+            QDomElement trkpt = doc.createElement("trkpt") ;
+            trkseg.appendChild(trkpt) ;
+            trkpt.setAttribute("lat", QString("%1").arg(ent.lat())) ;
+            trkpt.setAttribute("lon", QString("%1").arg(ent.lon())) ;
+
+            QDomElement eelev = doc.createElement("ele") ;
+            QDomText delev = doc.createTextNode(QString("%1").arg(ent.elev())) ;
+            eelev.appendChild(delev) ;
+            trkpt.appendChild(eelev) ;
+
+            if (ent.date().isValid()) {
+                QDomElement edate = doc.createElement("date") ;
+                QDomText ddate = doc.createTextNode(QString("%1").arg(ent.date().toString(Qt::ISODate))) ;
+                edate.appendChild(ddate) ;
+                trkpt.appendChild(edate) ;
+            }
+
+            ent.markAsClean() ;
+        }
+     }
+
+
      doc.appendChild(gpx) ;
 
      QTextStream stream( &file );
-     stream << doc.toString();
+     QString str = doc.toString() ;
+     stream << str;
      file.close();
 
-     if (!exporting) {
-         updateLastEdited() ;
-        bListDirty=false ;
-     }
+     updateLastEdited() ;
+     bListDirty=false ;
 
-    return success ;
+     qDebug() << "PoiCollection::saveGpx() =>" << filename << " (version: " << sLastEdited << ", sequence: " << sLastSavedSequence << ")" ;
+
+     return success ;
 }
 
 //
 // Export to OV2
 //
-bool PoiCollection::saveOv2()
+bool PoiCollection::saveOv2(QString filename)
 {
-// TODO: Untangle save function as this is now an export function
+    if (filename.isEmpty()) filename = sFilename ;
     if (sFilename.isEmpty()) return false ;
 
-    QFile outputstream(sFilename + QString(".ov2")) ;
+    filename = filename.replace(".gpx", ".ov2") ;
+
+    QFile outputstream(filename) ;
     if (!outputstream.open(QIODevice::ReadWrite))
         return false ;
 
@@ -457,7 +611,7 @@ bool PoiCollection::saveOv2()
     }
 
     outputstream.close() ;
-    qDebug() << "PoiCollection::save() =>" << sFilename << " (version: " << sLastEdited << ", sequence: " << sLastSavedSequence << ")" ;
+    qDebug() << "PoiCollection::saveOv2() =>" << filename << " (version: " << sLastEdited << ", sequence: " << sLastSavedSequence << ")" ;
     return success ;
 }
 
@@ -466,15 +620,33 @@ int PoiCollection::size()
    return poiList.size() ;
 }
 
+int PoiCollection::trackSize()
+{
+   return trackList.size() ;
+}
+
 PoiEntry& PoiCollection::at(int i)
 {
     return poiList[i] ;
+}
+
+TrackEntry &PoiCollection::trackAt(int i)
+{
+    return trackList[i] ;
 }
 
 bool PoiCollection::add(PoiEntry& newEntry)
 {
     remove(newEntry.uuid()) ;
     poiList.insert(0, newEntry) ;
+    bListDirty=true ;
+    return true ;
+}
+
+bool PoiCollection::add(TrackEntry& newEntry)
+{
+    removeTrack(newEntry.uuid()) ;
+    trackList.insert(0, newEntry) ;
     bListDirty=true ;
     return true ;
 }
@@ -493,6 +665,19 @@ bool PoiCollection::remove(QString uuid)
     }
 }
 
+bool PoiCollection::removeTrack(QString uuid)
+{
+    int i=trackList.size()-1 ;
+    while (i>=0 && trackList[i].uuid() != uuid) i-- ;
+    if (i>=0) {
+        bListDirty=true ;
+        trackList.removeAt(i) ;
+        return true ;
+    } else {
+        return false ;
+    }
+}
+
 PoiEntry& PoiCollection::find(QString uuid)
 {
     int i=poiList.size()-1 ;
@@ -501,6 +686,50 @@ PoiEntry& PoiCollection::find(QString uuid)
         return poiList[i] ;
     } else {
         return nullPoiEntry ;
+    }
+}
+
+PoiEntry& PoiCollection::findPrev(QString uuid)
+{
+    int i=poiList.size()-1 ;
+    while (i>=0 && poiList[i].uuid() != uuid) i-- ;
+    if (i>0) {
+        return poiList[i-1] ;
+    } else {
+        return nullPoiEntry ;
+    }
+}
+
+PoiEntry& PoiCollection::findNext(QString uuid)
+{
+    int i=poiList.size()-1 ;
+    while (i>=0 && poiList[i].uuid() != uuid) i-- ;
+    if (i>=0 && i<poiList.size()-1) {
+        return poiList[i+1] ;
+    } else {
+        return nullPoiEntry ;
+    }
+}
+
+TrackEntry& PoiCollection::findTrack(QString uuid)
+{
+    int i = trackList.size()-1 ;
+    while (i>=0 && trackList[i].uuid() != uuid) i-- ;
+    if (i>=0) {
+        return trackList[i] ;
+    } else {
+        return nullTrackEntry ;
+    }
+}
+
+TrackEntry& PoiCollection::findNextTrack(QString uuid)
+{
+    int i = trackList.size()-2 ;
+    while (i>=0 && trackList[i].uuid() != uuid) i-- ;
+    if (i>=0) {
+        return trackList[i+1] ;
+    } else {
+        return nullTrackEntry ;
     }
 }
 
@@ -560,11 +789,15 @@ bool PoiCollection::importOv2(QString filename)
         return false ;
 
     bool success ;
+    int i=0 ;
+
     do {
         PoiEntry record ;
         success=record.importOv2(inputstream) ;
         if (record.isValid()) {
+            record.setSequence(i*2) ;
             poiList.append(record) ;
+            i++ ;
         }
     } while (success && !inputstream.atEnd()) ;
 
@@ -687,3 +920,102 @@ void PoiEntry::copyFrom(PoiEntry& source)
     valid=true ;
     dirty=false ;
 }
+
+
+// ///////////////////////////////////////////////////////
+//
+// TrackEntry
+//
+
+
+TrackEntry::TrackEntry()
+{
+    QUuid quuid = QUuid::createUuid() ;
+    sUuid = quuid.toString() ;
+    dLat = 0.0 ;
+    dLon = 0.0 ;
+    dElev = 0.0 ;
+    tDate = QDateTime() ;
+    bValid = false ;
+    bDirty = false ;
+}
+
+TrackEntry::~TrackEntry()
+{
+}
+
+void TrackEntry::markAsClean() { bDirty = false ; }
+
+void TrackEntry::set(double lat, double lon, double elev, QDateTime date)
+{
+    dLat = lat ;
+    dLon = lon ;
+    dElev = elev ;
+    tDate = date ;
+    bValid = true ;
+    bDirty = true  ;
+}
+
+void TrackEntry::setLatLon(double lat, double lon)
+{
+    dLat = lat ;
+    dLon = lon ;
+    bValid = true ;
+    bDirty = true  ;
+}
+
+double TrackEntry::distanceFrom(TrackEntry& other)
+{
+    return _distanceFrom(dLat, dLon, other.lat(), other.lon()) ;
+}
+
+double TrackEntry::distanceFrom(PoiEntry& other)
+{
+    return _distanceFrom(dLat, dLon, other.lat(), other.lon()) ;
+}
+
+void TrackEntry::setSequence(int sequence)
+{
+    iSequence = sequence ;
+}
+
+double TrackEntry::lat()
+{
+    return dLat ;
+}
+
+double TrackEntry::lon()
+{
+    return dLon ;
+}
+
+double TrackEntry::elev()
+{
+    return dElev ;
+}
+
+int TrackEntry::sequence()
+{
+    return iSequence ;
+}
+
+QString TrackEntry::uuid()
+{
+    return sUuid ;
+}
+
+QDateTime TrackEntry::date()
+{
+    return tDate ;
+}
+
+bool TrackEntry::isValid()
+{
+    return bValid ;
+}
+
+bool TrackEntry::isDirty()
+{
+    return bDirty ;
+}
+

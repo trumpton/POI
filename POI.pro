@@ -26,7 +26,11 @@ SOURCES += main.cpp\
     configuration.cpp \
     cookies.cpp \
     prompt.cpp \
-    merge.cpp
+    merge.cpp \
+    mainwindow_mapcallback.cpp \
+    mainwindow_menu.cpp \
+    mainwindow_editdetails.cpp \
+    mainwindow_lists.cpp
 
 HEADERS  += mainwindow.h \
     googlemapswidget.h \
@@ -42,9 +46,7 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     configuration.ui \
-    prompt.ui \
-    merge.ui \
-    merge.ui
+    prompt.ui
 
 RESOURCES += \
     googlemaps.qrc \

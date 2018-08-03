@@ -4,6 +4,10 @@
 
 #include "googlemapswidget.h"
 
+// Format for QString::arg(double)
+#define dbl(n) arg(n,20,'g',15)
+
+
 GoogleMapsWidget::GoogleMapsWidget(QWidget *parent) :
    WebAccess(parent)
 {
@@ -24,10 +28,11 @@ GoogleMapsWidget::~GoogleMapsWidget()
 {
 }
 
-void GoogleMapsWidget::initialise(QString key, QString workingUuid)
+void GoogleMapsWidget::initialise(QString key, QString workingUuid, QString trackUuid)
 {
     // Save uuid
     cachedWorkingCollectionUuid = workingUuid ;
+    cachedTrackCollectionUuid = trackUuid ;
 
     // Load the html for the page
     QUrl url = QUrl("qrc:///googlemaps/google_maps.html") ;
@@ -59,7 +64,7 @@ void GoogleMapsWidget::initialise2(bool ok)
 #endif
 
         // Finally, initialise the javascript (connect to channel & register workingcollectionuuid)
-        initialiseJavascript(cachedWorkingCollectionUuid) ;
+        initialiseJavascript(cachedWorkingCollectionUuid, cachedTrackCollectionUuid) ;
 
 
     } else {
@@ -114,11 +119,11 @@ int GoogleMapsWidget::getZoom()
 
 void GoogleMapsWidget::runJavaScript(QString command)
 {
-#ifdef WEBENGINE
+//#ifdef WEBENGINE
     page()->runJavaScript(command) ;
-#else
-    page()->mainFrame()->evaluateJavaScript(command) ;
-#endif
+//#else
+//    page()->mainFrame()->evaluateJavaScript(command) ;
+//#endif
 }
 
 
@@ -126,9 +131,9 @@ void GoogleMapsWidget::runJavaScript(QString command)
 // Collection identification
 //
 
-void GoogleMapsWidget::initialiseJavascript(QString uuid)
+void GoogleMapsWidget::initialiseJavascript(QString workingUuid, QString trackUuid)
 {
-    QString str = QString("initialise(\"%1\");").arg(uuid) ;
+    QString str = QString("initialise(\"%1\", \"%2\");").arg(workingUuid).arg(trackUuid) ;
 
     qDebug() << "" ;
     qDebug() << "GoogleMapsWidget::initialiseJavascript() =>" ;
@@ -142,15 +147,21 @@ void GoogleMapsWidget::initialiseJavascript(QString uuid)
 // Javascript navigaion functions
 //
 
+void GoogleMapsWidget::showTracks(bool enabled)
+{
+    QString str = QString("showTracks(%1);").arg(enabled?"true":"false") ;
+
+    qDebug() << "" ;
+    qDebug() << "GoogleMapsWidget::showTracks() =>" ;
+    qDebug() << str ;
+    runJavaScript(str) ;
+}
+
 void GoogleMapsWidget::gotoCoordinates(double lat, double lon, int zoom)
 {
 
-    QString str = QString("gotoCoordinates(%1, %2, %3);").arg(lat).arg(lon).arg(zoom) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::gotoCoordinates() =>" ;
-    qDebug() << str ;
-
+    QString str = QString("gotoCoordinates(%1, %2, %3);").dbl(lat).dbl(lon).arg(zoom) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     dLat = lat ; dLon = lon ; iZoom = zoom ;
     runJavaScript(str) ;
 }
@@ -159,36 +170,24 @@ void GoogleMapsWidget::gotoCoordinates(double lat, double lon, int zoom)
 // Javascript marker set / management functions
 //
 
-void GoogleMapsWidget::setMarker(QString uuid, QString collectionuuid, double east, double north, QString address)
+void GoogleMapsWidget::setMarker(QString uuid, QString collectionuuid, double east, double north, QString address, int sequence, bool drop)
 {
-
-
     removeMarker(uuid) ;
-    QString str =
-      QString("setMarker(\"%1\", \"%2\", %3, %4, \"%5\");").
-            arg(uuid).
-            arg(collectionuuid).
-            arg(east).arg(north).
-            arg(address) ;
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::setMarker() =>" ;
-    qDebug() << str ;
+    QString str = QString("setMarker(\"%1\", \"%2\", %3, %4, \"%5\", %6, %7);").
+            arg(uuid).arg(collectionuuid).dbl(east).dbl(north).
+            arg(address).arg(sequence).arg(drop?"true":"false");
+    qDebug() << "GoogleMapsWidget::" << str ;
 
     runJavaScript(str) ;
 }
 
 void GoogleMapsWidget::setMarkerCollection(QString uuid, QString collectionuuid)
 {
-
-
     QString str =
       QString("setMarkerCollection(\"%1\", \"%2\");").
             arg(uuid).
             arg(collectionuuid) ;
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::setMarkerCollection() =>" ;
-    qDebug() << str ;
-
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -196,10 +195,7 @@ void GoogleMapsWidget::selectMarker(QString uuid)
 {
 
     QString str = QString("selectMarker(\"%1\");").arg(uuid) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::selectMarker() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -208,10 +204,7 @@ void GoogleMapsWidget::seekToMarker(QString uuid, int zoom)
 {
 
     QString str = QString("seekToMarker(\"%1\",%2);").arg(uuid).arg(zoom) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::seekToMarker() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -219,10 +212,7 @@ void GoogleMapsWidget::removeMarker(QString uuid)
 {
 
     QString str = QString("removeMarker(\"%1\");").arg(uuid) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::removeMarker() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -230,9 +220,7 @@ void GoogleMapsWidget::removeAllMarkers()
 {
 
     QString str = QString("removeAllMarkers();") ;
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::removeAllMarkers() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -242,40 +230,26 @@ void GoogleMapsWidget::removeAllMarkers()
 //
 void GoogleMapsWidget::jsmapMoved(double lat, double lon, int zoom)
 {
+    QString str = QString("jsMapMoved(%1,%2,%3").dbl(lat).dbl(lon).arg(zoom) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     dLat = lat ; dLon = lon ; iZoom = zoom ;
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsmapMoved() =>" ;
-    qDebug() << "lat = " << dLat << ", lon = " << dLon << ", zoom = " << iZoom ;
     emit mapMoved(dLat, dLon, iZoom) ;
 }
 
 void GoogleMapsWidget::jsmarkerMoved(QString uuid, QString collectionuuid, double lat, double lon)
 {
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsmarkerMoved() =>" ;
-    qDebug() << "uuid = " << uuid ;
-    qDebug() << "collectionuuid = " << collectionuuid ;
-    qDebug() << "lat/lon = " << lat << "," << lon ;
-    geocodeMarker(uuid, collectionuuid, true) ;
+    QString str = QString("jsmarkerMoved(\"%1\",\"%2\",%3,%4);").arg(uuid).arg(collectionuuid).dbl(lat).dbl(lon) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     emit markerMoved(uuid, collectionuuid, lat, lon) ;
 }
 
 
 void GoogleMapsWidget::jsmarkerSelected(QString uuid, QString collectionuuid)
 {
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsmarkerSelected() =>" ;
-    qDebug() << "uuid = " << uuid ;
-    qDebug() << "collectionuuid = " << collectionuuid ;
-
-    // TODO: Check if geocoding as actually necessary here
-    // As marker is geocoded once placed, and when moved
-    // geocodeMarker(uuid, collectionuuid, false) ;
-
+    QString str = QString("jsmarkerSelected(\"%1\",\"%2\"").arg(uuid).arg(collectionuuid) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     emit markerSelected(uuid, collectionuuid) ;
 }
-
-
 
 
 //
@@ -286,20 +260,23 @@ void GoogleMapsWidget::geocodeMarker(QString uuid, QString collectionuuid, bool 
 {
 
     QString str = QString("geocodeMarker(\"%1\",\"%2\",%3);").arg(uuid).arg(collectionuuid).arg((forcegeocode?"true":"false")) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::geocodeMarker() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
 void GoogleMapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode)
 {
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsmarkerGeocoded() =>" ;
-    qDebug() << "uuid = " << uuid ;
-    qDebug() << "collectionuuid = " << collectionuuid ;
-    qDebug() << "address = " << formattedaddress << ", door = " << door << ", street = " << street << ", town= " << town << ", state = " << state << ", country = " << country << ", postcode = " << postcode;
+    QString str = QString("jsmarkerGeocoded(\"%1\",\"%2\",\"%3\",\"%4\",\"%5\",\"%6\",\"%7\",\"%8\",\"%9\")")
+            .arg(uuid)
+            .arg(collectionuuid)
+            .arg(formattedaddress)
+            .arg(door)
+            .arg(street)
+            .arg(town)
+            .arg(state)
+            .arg(country)
+            .arg(postcode) ;
+    qDebug() << "GoogleMapsWidget" << str ;
     emit markerGeocoded(uuid, collectionuuid, formattedaddress, door, street, town, state, country, postcode) ;
 }
 
@@ -314,30 +291,29 @@ void GoogleMapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QS
 void GoogleMapsWidget::searchLocation(QString address)
 {
     QString str = QString("searchLocation(\"%1\");").arg(address.replace(' ','+')) ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::searchLocation() =>" ;
-    qDebug() << str ;
-
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
 void GoogleMapsWidget::jsSearchResultsReady(QString placeid, double lat, double lon, QString address, QString phone)
 {
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsSearchResults() =>" ;
-    qDebug() << "placeid: " << placeid ;
-    qDebug() << "lat/lon: " << lat << ", " << lon;
-    qDebug() << "address:" << address ;
-    qDebug() << "phone:" << phone ;
+    QString str = QString("jsSearchResultsReady(\"%1\",%2,%3,\"%4\",\"%5\")").arg(placeid).dbl(lat).dbl(lon).arg(address).arg(phone) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     emit searchResultsReady(lat, lon, address, phone) ;
 }
 
 void GoogleMapsWidget::jsSearchFailed(QString error)
 {
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::jsSearchFailed() =>" ;
-    qDebug() << "error: " << error ;
+    QString str = QString("jsSearchFailed(\"%1\")").arg(error) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     emit searchFailed(error) ;
 }
 
+//
+// Debug
+//
+void GoogleMapsWidget::jsDebug(QString message)
+{
+    qDebug() << QString("JS: ") << message ;
+
+}

@@ -153,6 +153,7 @@ private:
     QString sFilename ;
     QString sUuid ;
     QString sTrackUuid ;
+    QString sName ;
 
     QList<PoiEntry> poiList ;
     QList<TrackEntry> trackList ;
@@ -162,6 +163,9 @@ private:
     bool bListDirty ;
     QString sLastEdited ;
     QString sLastSavedSequence ;
+
+    double dtracklength, dheightgain, dheightloss ;
+    double dtracktime, dtracktimeest ;
 
 public:
     PoiCollection();
@@ -173,6 +177,13 @@ public:
     bool clear() ;
     bool isDirty() ;
     QString& getSequenceText() ;
+
+    double trackLength() ;
+    double heightGain() ;
+    double heightLoss() ;
+    double trackTime() ;
+    double trackTimeEst() ;
+
 
     const QString& uuid() ;
     const QString& trackUuid() ;
@@ -196,7 +207,6 @@ public:
     PoiEntry& at(int i) ;
     TrackEntry& trackAt(int i) ;
 
-
     // Sort the list by sequence number
     void sort() ;
 
@@ -208,6 +218,10 @@ public:
     bool saveGpx(QString filename = QString("")) ;
     bool saveOv2(QString filename = QString("")) ;
 
+    // Name access
+    QString& name() ;
+    void setName(QString name) ;
+
 private:
 
     // Extract XML Data
@@ -218,6 +232,8 @@ private:
     bool storeXmlData(QDomDocument& doc, QString text, QDomElement element, const char *tag, QString attribute = QString(""), QString attrval = QString("")) ;
 
     void updateLastEdited() ;
+
+    bool calculateTrack() ;
 };
 
 

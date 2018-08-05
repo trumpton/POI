@@ -4,7 +4,6 @@
 #include "googlemapswidget.h"
 #include "poicollection.h"
 #include "configuration.h"
-#include "merge.h"
 
 #include <QMainWindow>
 #include <QListWidget>
@@ -36,18 +35,49 @@ private slots:
     void mapCallbackSearchResultsReady(double lat, double lon, QString formattedAddress, QString phoneNumber) ;
     void mapCallbackSearchFailed(QString error) ;
 
-    // Search
-    void on_btnFind_pressed();
-    void on_lineEdit_Search_returnPressed();
-
     // Main menu handlers
     void on_action_New_triggered();
     void on_action_Open_triggered();
     void on_action_Save_triggered();
+    void on_action_SaveAs_triggered();
     void on_action_Setup_triggered();
     void on_action_Exit_triggered();
     void on_actionClear_Cookies_triggered();
     void on_actionRefresh_Google_Map_triggered();
+
+    // Edit
+    void on_action_ShowTrack_toggled(bool arg1);
+    void on_action_CreateTrackFromWaypoints_triggered();
+    void on_action_ReduceTrackPoints_triggered();
+
+    // Import
+    void on_action_ImportGpx_triggered();
+    void on_action_ImportOv2_triggered();
+    void on_action_ImportGpxToClipboard_triggered();
+    void on_actionAuto_Geocode_triggered();
+    void on_action_About_POI_triggered();
+    void on_action_EditAll_triggered();
+    void on_action_EmptyClipboard_triggered();
+
+    // Export
+    void on_action_LaunchTomTom_triggered();
+
+    // Search
+    void on_action_FindLocation_triggered();
+
+    // About
+
+    // File List Handler
+    void on_comboBox_Filter_currentIndexChanged(int index);
+    void on_listFile_itemClicked(QListWidgetItem *item);
+    void on_btnEditFile_clicked();
+    void on_btnCopyToClipboard_clicked();
+    void on_btnUp_clicked();
+    void on_btnDown_clicked();
+
+    // Track Handlers
+    void on_NewTrackPoint_clicked();
+    void on_DeleteTrackPoint_clicked();
 
     // Clipboard handlers
     void on_listWorking_itemClicked(QListWidgetItem *item);
@@ -55,12 +85,6 @@ private slots:
     void on_btnStore_clicked();
     void on_btnDuplicate_clicked();
     void on_btnDelete_clicked();
-
-    // File List Handler
-    void on_listFile_itemClicked(QListWidgetItem *item);
-    void on_action_LaunchTomTom_triggered();
-    void on_btnEditFile_clicked();
-    void on_btnCopyToClipboard_clicked();
 
     // Form Field Updates
     void on_lineEdit_title_editingFinished();
@@ -77,39 +101,15 @@ private slots:
     void on_lineEdit_Phone2_editingFinished();
     void on_lineEdit_Door_returnPressed();
 
-    // Import
-    void on_action_ImportGpx_triggered();
-    void on_action_ImportOv2_triggered();
-    void on_action_ImportGpxToClipboard_triggered();
 
-    void on_actionAuto_Geocode_triggered();
-    void on_action_About_POI_triggered();
-    void on_action_EditAll_triggered();
-    void on_action_EmptyClipboard_triggered();
+    void on_lineEdit_fileTitle_editingFinished();
 
-
-    void on_btnUp_clicked();
-
-    void on_btnDown_clicked();
-
-    void on_NewTrackPoint_clicked();
-    void on_DeleteTrackPoint_clicked();
-    void on_action_ShowTrack_toggled(bool arg1);
-    void on_action_CreateTrackFromWaypoints_triggered();
-    void on_action_ReduceTrackPoints_triggered();
-
-    void on_action_SaveAs_triggered();
-
-    void on_comboBox_Filter_currentIndexChanged(int index);
+    void on_action_ShowActualDuration_triggered();
 
 private:
 
-    // Merge Dialog
-    Merge merge ;
-
     // Update the lists and entry form
     bool refresh(bool refreshMarkers = false, bool centreOnMarker = false, int zoom = 0) ;
-
 
     // Sets the line entry text data and colour
     void setLineEditText(QLineEdit *control, PoiEntry& data, PoiEntry::FieldType edited, PoiEntry::FieldType geocoded, QLabel *qledited, QLabel *qlgeo) ;
@@ -124,6 +124,7 @@ private:
     bool loadFiles() ;
 
     // Save curent File
+    QString buildFilename() ;
     void saveCollection(bool autoyes = false) ;
 
     // Refresh the map selected icons
@@ -159,6 +160,9 @@ private:
 
     // Current working list and POI File
     PoiCollection workingCollection, fileCollection ;
+
+    // Search QUery
+    QString searchtext ;
 
 };
 

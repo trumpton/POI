@@ -22,13 +22,21 @@ void MainWindow::on_action_New_triggered()
     saveCollection(false) ;
     fileCollection.clear() ;
     ui->action_ShowTrack->setChecked(false) ;
+    ui->action_ShowActualDuration->setChecked(false) ;
+    ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
+
     refresh(true) ;
 }
 
+
 void MainWindow::on_action_Save_triggered()
 {
-    saveCollection(true) ;
-    refresh() ;
+    if (fileCollection.filename().isEmpty()) {
+        on_action_SaveAs_triggered();
+    } else {
+        saveCollection(true) ;
+        refresh() ;
+    }
 }
 
 void MainWindow::on_action_SaveAs_triggered()
@@ -102,11 +110,6 @@ void MainWindow::on_actionAuto_Geocode_triggered()
     } else {
         QMessageBox::information(this, QString("POI"), QString("Geocoding Complete. ") + QString::number(geocodefailed) + QString("entries of ") + QString::number(geocodecount) + QString(" failed to geocode."), QMessageBox::Ok) ;
     }
-}
-
-void MainWindow::on_action_About_POI_triggered()
-{
-    QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
 }
 
 
@@ -240,6 +243,7 @@ void MainWindow::on_action_Open_triggered()
 
     saveCollection() ;
     fileCollection.clear() ;
+    ui->action_ShowActualDuration->setChecked(false) ;
 
     if (!filename.isEmpty()) {
         if (!fileCollection.loadGpx(filename)) {
@@ -248,6 +252,21 @@ void MainWindow::on_action_Open_triggered()
             thisCollectionUuid = fileCollection.uuid() ;
             bool hastracks = fileCollection.trackSize()>0 ;
             ui->action_ShowTrack->setChecked(hastracks) ;
+
+            QFileInfo fileinfo(filename) ;
+
+            if (fileCollection.name().isEmpty()) fileCollection.setName(fileinfo.baseName().replace(".gpx","")) ;
+            ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
+
+            // Add an entry if the file has no waypoints
+            if (fileCollection.size()==0 && fileCollection.trackSize()>0) {
+                PoiEntry anchor ;
+                anchor.setLatLon(fileCollection.trackAt(0).lat(), fileCollection.trackAt(0).lon()) ;
+                anchor.setSequence(0) ;
+                anchor.set(PoiEntry::EDITEDTITLE, fileCollection.name()) ;
+                anchor.set(PoiEntry::EDITEDDESCR, fileCollection.name()) ;
+                fileCollection.add(anchor) ;
+            }
         }
     }
     refresh(true) ;
@@ -383,3 +402,36 @@ void MainWindow::on_action_ReduceTrackPoints_triggered()
     refresh(true) ;
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Search Menu
+//
+
+void MainWindow::on_action_FindLocation_triggered()
+{
+    bool ok;
+    searchtext = QInputDialog::getText(0, "POI","Search For", QLineEdit::Normal,"", &ok);
+    if (!searchtext.isEmpty()) ui->googlemapsWebView->searchLocation(searchtext) ;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// About Menu
+//
+
+void MainWindow::on_action_About_POI_triggered()
+{
+    QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
+}
+
+
+
+
+
+void MainWindow::on_action_ShowActualDuration_triggered()
+{
+    refresh(true) ;
+}

@@ -13,14 +13,10 @@ GoogleMapsWidget::GoogleMapsWidget(QWidget *parent) :
 {
 
     connect(this, SIGNAL(loadFinished(bool)), this, SLOT(initialise2(bool))) ;
-
-#ifdef WEBENGINE
     connect(this, SIGNAL(authenticationRequired(const QUrl &, QAuthenticator*)),
             SLOT(authenticationRequired(const QUrl &, QAuthenticator*)));
     connect(this, SIGNAL(proxyAuthenticationRequired(const QUrl &, QAuthenticator *, const QString &)),
             SLOT(proxyAuthenticationRequired(const QUrl &, QAuthenticator *, const QString &)));
-#endif
-
     dLat=0 ; dLon=0 ; iZoom=0 ;
 }
 
@@ -56,13 +52,8 @@ void GoogleMapsWidget::initialise2(bool ok)
     qDebug() << "bool: " << (ok?"true":"false") ;
     if (ok) {
 
-#ifdef WEBENGINE
         this->page()->setWebChannel(&channel) ;
         channel.registerObject("GoogleMapsWidget", this) ;
-#else
-        this->page()->mainFrame()->addToJavaScriptWindowObject("GoogleMapsWebViewWidget", this) ;
-#endif
-
         // Finally, initialise the javascript (connect to channel & register workingcollectionuuid)
         initialiseJavascript(cachedWorkingCollectionUuid, cachedTrackCollectionUuid) ;
 

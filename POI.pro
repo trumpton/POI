@@ -26,7 +26,6 @@ SOURCES += main.cpp\
     configuration.cpp \
     cookies.cpp \
     prompt.cpp \
-    merge.cpp \
     mainwindow_mapcallback.cpp \
     mainwindow_menu.cpp \
     mainwindow_editdetails.cpp \
@@ -41,8 +40,7 @@ HEADERS  += mainwindow.h \
     apikeys.h \
     urls.h \
     prompt.h \
-    version.h \
-    merge.h
+    version.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \

@@ -1,21 +1,23 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+// FEATURES:
 //
-// TODO: Importing geocoding trips up over itself, and the different responses are not
-//       necessarily assigned to the correct query.  Need a query identifier which
-//       is returned with the response - i.e. the uuid.
+// 1. Loading new track that has no waypoints - add a waypoint into the clipboard for the start - give it the name of the file.
+// 2. Calculate and show track length, and height / descent
+// 3. Show duration - do something clever when adding new points with time.
+// 4. Store length / duration etc. in gpx description and perhaps filename
+// 5. Allow track name to be edited (Garmin doesn't use the filename)
+// 6. Add durations to summary
+// 7. Auto generate filename for Save As
 
-
-//
 // BUG: Select blue then green, and form fields are grey
 //      Select red then green, and some form fields are black when they should be disabled (grey)
 //
 
-//
-// TODO: Export as OV2 aswell if there are no track points
-//       Otherwise, just export as gpx
-//
+// BUG: Delete waypoint from clipboard not working
+
+// BUG: Save as doesn't mark as saved
 
 
 #include <QDesktopServices>
@@ -101,6 +103,45 @@ TrackEntry& MainWindow::findTrackEntryByUuid(QString uuid, QString collectionUui
 // Save Function
 //
 
+
+QString MainWindow::buildFilename()
+{
+    QString name, formattedname ;
+    name = fileCollection.name() ;
+
+    bool lastwasspace=true ;
+    for (int i=0; i<name.length(); i++) {
+        QChar ch = name.at(i) ;
+        if (!ch.isLetterOrNumber()) {
+            lastwasspace=true ;
+        } else {
+            if (lastwasspace) {
+                formattedname = formattedname + ch.toUpper() ;
+            } else {
+                formattedname = formattedname + ch.toLower() ;
+            }
+            lastwasspace=false ;
+        }
+    }
+
+    long int duration = fileCollection.trackTimeEst() ;
+    if (!formattedname.isEmpty() && duration>0) {
+        formattedname = formattedname + QString("_") + QString::number((long int)(duration/60)) + QString("h") + (duration%60<10?QString("0"):QString("")) + QString::number((long int)(duration%60)) ;
+    }
+
+    long int distance = fileCollection.trackLength() ;
+    if (!formattedname.isEmpty() && distance>0) {
+        formattedname = formattedname + QString("_") + QString::number(distance/1000,'f',1) + QString("km") ;
+    }
+
+    long int climb = fileCollection.heightGain() ;
+    if (!formattedname.isEmpty() && climb>0) {
+        formattedname = formattedname + QString("_") + QString::number(climb,'f',0) + QString("m") ;
+    }
+
+    return formattedname ;
+}
+
 void MainWindow::saveCollection(bool autoyes)
 {
     if (fileCollection.isDirty()) {
@@ -117,7 +158,7 @@ void MainWindow::saveCollection(bool autoyes)
             if (fileCollection.filename().isEmpty()) {
 
                 // Get filename
-                QString filename = QFileDialog::getSaveFileName(this, QString("Save File"), QString(""), QString("GPX Files (*.gpx)")) ;
+                QString filename = QFileDialog::getSaveFileName(this, QString("Save File"), buildFilename(), QString("GPX Files (*.gpx)")) ;
 
                 // Add extension if missing
                 QRegularExpression re(".*\\.gpx", QRegularExpression::CaseInsensitiveOption) ;
@@ -197,8 +238,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->groupBox_Details->setEnabled(true) ;
             ui->groupBox_Details->setVisible(true) ;
             ui->btnStore->setEnabled(true) ;
-            ui->btnDuplicate->setEnabled(false) ;
-            ui->btnDelete->setEnabled(false) ;
+            ui->btnDuplicate->setEnabled(true) ;
+            ui->btnDelete->setEnabled(true) ;
 
         } else if (updateListSelection(&fileCollection, ui->listFile)) {
 
@@ -410,6 +451,22 @@ bool MainWindow::updateListSelection(PoiCollection *collection, QListWidget *wid
 
 bool MainWindow::refreshMap()
 {
+    ui->label_distance->setText(QString::number(fileCollection.trackLength()/1000,'f',1)+QString(" km")) ;
+    ui->label_climb->setText(QString::number(fileCollection.heightGain(),'f',0)+QString(" m / ")+QString::number(fileCollection.heightLoss(),'f',0)+QString(" m")) ;
+
+    QString time ;
+
+    if (ui->action_ShowActualDuration->isChecked()) {
+        long int duration ;
+        duration = (long int) fileCollection.trackTime() ;
+        time = QString::number(duration/60)+QString("h")+((duration%60<10)?QString("0"):QString(""))+QString::number(duration%60) + QString(" (act)");
+    } else {
+        long int duration ;
+        duration = (long int) fileCollection.trackTimeEst() ;
+        time = QString::number(duration/60)+QString("h")+((duration%60<10)?QString("0"):QString(""))+QString::number(duration%60);
+    }
+    ui->label_duration->setText(time) ;
+
     ui->googlemapsWebView->removeAllMarkers() ;
     for (int i=0, ni=workingCollection.size(); i<ni; i++) {
         PoiEntry& ent = workingCollection.at(i) ;
@@ -443,24 +500,15 @@ bool MainWindow::refreshMap()
     return true ;
 }
 
-//////////////////////////////////////////////////////////////////////////
-//
-// Search for New Locations on Map
-//
-
-// Search for a new location
-void MainWindow::on_btnFind_pressed()
-{
-    ui->googlemapsWebView->searchLocation(ui->lineEdit_Search->text()) ;
-}
-
-void MainWindow::on_lineEdit_Search_returnPressed()
-{
-    on_btnFind_pressed() ;
-}
-
 
 void MainWindow::on_comboBox_Filter_currentIndexChanged(int index)
 {
     refresh(false) ;
 }
+
+
+void MainWindow::on_lineEdit_fileTitle_editingFinished()
+{
+    fileCollection.setName(ui->lineEdit_fileTitle->text()) ;
+}
+

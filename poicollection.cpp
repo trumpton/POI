@@ -6,6 +6,15 @@
 #include <QDebug>
 #include <math.h>
 
+//
+// Duration Calculations:
+//
+// Estimate used if real time not presented
+//
+// Walking time = 3 miles per hour (4.82kph)
+// Climbing Time = 1 minute for every 10 metres ascent
+// Descent Time = 1 minute for every 20 metre descent
+//
 
 // Returns distance between 2 coordinates in metres
 double _distanceFrom(double lat1, double lon1, double lat2, double lon2)
@@ -112,6 +121,12 @@ bool PoiCollection::clear()
     bListDirty=false ;
     sLastEdited = "" ;
     sLastSavedSequence = "" ;
+    dtracklength = 0 ;
+    dheightgain = 0 ;
+    dheightloss = 0 ;
+    dtracktime = 0 ;
+    dtracktimeest = 0 ;
+    sName = "" ;
     return true ;
 }
 
@@ -228,6 +243,15 @@ bool PoiCollection::extractXmlData(QDomNode n, const char *tag, PoiEntry::FieldT
     return false ;
 }
 
+QString& PoiCollection::name() {
+    return sName ;
+}
+
+void PoiCollection::setName(QString name) {
+    sName = name ;
+    bListDirty = true ;
+}
+
 bool PoiCollection::loadGpx(QString filename)
 {
     int seq = 0 ;
@@ -237,6 +261,8 @@ bool PoiCollection::loadGpx(QString filename)
 
     sFilename = filename ;
     poiList.clear() ;
+    trackList.clear() ;
+    sName.clear() ;
 
     bool success=true ;
 
@@ -247,6 +273,14 @@ bool PoiCollection::loadGpx(QString filename)
 
      QDomElement gpx = doc.firstChildElement("gpx") ;
      QDomNodeList wpt = gpx.elementsByTagName("wpt") ;
+
+     // Load File Details
+
+     QDomElement metadataelement = gpx.firstChildElement("metadata") ;
+     if (metadataelement.isElement()) {
+         QDomElement nameelement = metadataelement.firstChildElement("name") ;
+         if (nameelement.isElement()) sName = nameelement.text() ;
+     }
 
      // Load Waypoints
 
@@ -335,6 +369,12 @@ bool PoiCollection::loadGpx(QString filename)
      for (int i=0, in = trk.size(); i<in; i++) {
 
         QDomNode tn = trk.item(i) ;
+
+        QDomElement trknameelement = tn.firstChildElement("name") ;
+        if (sName.isEmpty() && trknameelement.isElement()) {
+            sName = trknameelement.text() ;
+        }
+
         QDomNodeList trkseg = tn.toElement().elementsByTagName("trkseg") ;
 
         for (int j=0, jn=trkseg.size(); j<jn; j++) {
@@ -384,6 +424,7 @@ bool PoiCollection::loadGpx(QString filename)
         }
     }
 
+    calculateTrack() ;
     bListDirty=false ;
     return success ;
 }
@@ -430,6 +471,15 @@ bool PoiCollection::saveGpx(QString filename)
      gpx.setAttribute("xsi:schemaLocation", "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensions/v3/GpxExtensionsv3.xsd") ;
      gpx.setAttribute("version", "1.1") ;
      gpx.setAttribute("creator", "trumpton.org") ;
+
+     // Set the metadata
+
+     QDomElement metadata = doc.createElement("metadata") ;
+     QDomElement name = doc.createElement("name") ;
+     QDomText text = doc.createTextNode(sName) ;
+     name.appendChild(text) ;
+     metadata.appendChild(name) ;
+     gpx.appendChild(metadata) ;
 
      for (int i=0; i<poiList.size(); i++) {
 
@@ -541,6 +591,12 @@ bool PoiCollection::saveGpx(QString filename)
 
          QDomElement trk = doc.createElement("trk") ;
          gpx.appendChild(trk) ;
+
+         QDomElement trkname = doc.createElement("name");
+         QDomText trktext = doc.createTextNode(sName) ;
+         trkname.appendChild(trktext) ;
+         trk.appendChild(trkname) ;
+
          QDomElement trkseg = doc.createElement("trkseg") ;
         trk.appendChild(trkseg) ;
 
@@ -648,6 +704,7 @@ bool PoiCollection::add(TrackEntry& newEntry)
     removeTrack(newEntry.uuid()) ;
     trackList.insert(0, newEntry) ;
     bListDirty=true ;
+    calculateTrack() ;
     return true ;
 }
 
@@ -672,6 +729,7 @@ bool PoiCollection::removeTrack(QString uuid)
     if (i>=0) {
         bListDirty=true ;
         trackList.removeAt(i) ;
+        calculateTrack() ;
         return true ;
     } else {
         return false ;
@@ -804,6 +862,69 @@ bool PoiCollection::importOv2(QString filename)
     inputstream.close() ;
     bListDirty=true ;
     return success ;
+}
+
+
+double PoiCollection::trackLength() { return dtracklength ; }
+double PoiCollection::heightGain() { return dheightgain ; }
+double PoiCollection::heightLoss() { return dheightloss ; }
+double PoiCollection::trackTime() { return dtracktime ; }
+double PoiCollection::trackTimeEst() { return dtracktimeest ; }
+
+bool PoiCollection::calculateTrack()
+{
+    dtracklength = 0 ;
+    dheightgain = 0 ;
+    dheightloss = 0 ;
+    dtracktime = 0 ;
+    dtracktimeest = 0 ;
+
+    if (trackList.size()<=1) {
+
+        return false ;
+
+    } else {
+
+        double lastheight = trackList[0].elev() ; ;
+
+        for (int i=1; i<trackList.size(); i++) {
+
+            TrackEntry& lastpoint = trackList[i-1] ;
+            TrackEntry& thispoint = trackList[i] ;
+
+            double distance = thispoint.distanceFrom(lastpoint) ;
+
+            double thisheight = thispoint.elev() ;
+            if (thisheight <= 0) thisheight = lastheight ;
+            double heightdelta = thisheight - lastheight ;
+
+            qDebug() << "HT, " << lastheight << ",  " << thisheight << ",  " << heightdelta ;
+
+            if (heightdelta>0) dheightgain += heightdelta ;
+            else dheightloss -= heightdelta ;
+            dtracklength += distance ;
+
+            lastheight = thisheight ;
+
+        }
+
+        // Naismith's Rule (minutes)
+        // Walking time = 3 miles per hour (5 km/h, 83.333333333 m/min)
+        dtracktimeest += dtracklength / 83.333333333 ;
+        // Climbing Time = 1 minute for every 10 metres ascent
+        dtracktimeest += dheightgain / 10 ;
+        // Descent Time = 1 minute for every 20 metre descent
+        dtracktimeest += dheightloss / 20 ;
+
+        // Actual Time (minutes)
+        QDateTime firsttime = trackList[0].date() ;
+        QDateTime lasttime = trackList[trackList.size()-1].date() ;
+        if (firsttime.isValid() && lasttime.isValid()) {
+            dtracktime = firsttime.msecsTo(lasttime) / 60000.0 ;
+        }
+
+        return true ;
+    }
 }
 
 

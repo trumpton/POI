@@ -25,9 +25,6 @@ void MainWindow::mapCallbackSearchResultsReady(double lat, double lon, QString f
     qDebug() << "MainWindow::" << str ;
 
     PoiEntry newEntry ;
-    QString searchtext ;
-
-    searchtext=ui->lineEdit_Search->text() ;
 
     newEntry.set(PoiEntry::EDITEDTITLE, searchtext) ;
     newEntry.set(PoiEntry::EDITEDDESCR, formattedAddress) ;

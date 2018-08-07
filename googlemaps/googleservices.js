@@ -3,8 +3,9 @@ var GoogleMapsWidget; // Setup by initialise
 var searchservice; // Setup by initialise
 var detailsservice; // Setup by initialise
 var geocoderservice; // Setup by initialise
-var collectionworking; // Setup by initialise
-var collectiontrack; // Setup by initialise
+var collectionworking; // Setup by registerUuids
+var collectionfile; // Setup by registerUuids
+var collectiontrack; // Setup by registerUuids
 
 var showlines ;
 var polyline ;
@@ -33,8 +34,15 @@ var centre = null;
 var bounds = null;
 var zoom = 0;
 
+// Register UUIDs
+function registerUuids(workinguuid, fileuuid, trackuuid) {
+    collectionworking = workinguuid;
+    collectionfile = fileuuid;
+    collectiontrack = trackuuid ;
+}
+
 // Create Map
-function initialise(workinguuid, trackuuid) {
+function initialise() {
 
     var myOptions = {
         center: new google.maps.LatLng(initialLat, initialLon),
@@ -54,8 +62,6 @@ function initialise(workinguuid, trackuuid) {
     searchservice = new google.maps.places.PlacesService(map);
     detailsservice = new google.maps.places.PlacesService(map);
     geocoderservice = new google.maps.Geocoder;
-    collectionworking = workinguuid;
-    collectiontrack = trackuuid ;
 
     new QWebChannel(qt.webChannelTransport, function(channel) {
 

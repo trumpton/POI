@@ -90,10 +90,6 @@ const int PoiEntry::sequence() { return iSequence ; }
 
 PoiCollection::PoiCollection()
 {
-    QUuid quuid = QUuid::createUuid() ;
-    sUuid = quuid.toString() ;
-    QUuid qtrackuuid = QUuid::createUuid() ;
-    sTrackUuid = qtrackuuid.toString() ;
     clear() ;
     updateLastEdited() ;
 }
@@ -115,6 +111,10 @@ void PoiCollection::updateLastEdited()
 
 bool PoiCollection::clear()
 {
+    QUuid quuid = QUuid::createUuid() ;
+    sUuid = quuid.toString() ;
+    QUuid qtrackuuid = QUuid::createUuid() ;
+    sTrackUuid = qtrackuuid.toString() ;
     sFilename = "" ;
     poiList.clear() ;
     trackList.clear() ;
@@ -132,6 +132,11 @@ bool PoiCollection::clear()
 
 const QString& PoiCollection::uuid() { return sUuid ; }
 const QString& PoiCollection::trackUuid() { return sTrackUuid ; }
+
+void PoiCollection::setUuid(QString uuid)
+{
+    sUuid = uuid ;
+}
 
 void PoiCollection::setFilename(QString filename) { sFilename = filename ; }
 const QString& PoiCollection::filename() { return sFilename ; }
@@ -258,11 +263,8 @@ bool PoiCollection::loadGpx(QString filename)
 
     if (filename.isEmpty()) filename = sFilename ;
     if (filename.isEmpty()) return false ;
-
+    clear() ;
     sFilename = filename ;
-    poiList.clear() ;
-    trackList.clear() ;
-    sName.clear() ;
 
     bool success=true ;
 
@@ -277,9 +279,17 @@ bool PoiCollection::loadGpx(QString filename)
      // Load File Details
 
      QDomElement metadataelement = gpx.firstChildElement("metadata") ;
+
      if (metadataelement.isElement()) {
+
          QDomElement nameelement = metadataelement.firstChildElement("name") ;
          if (nameelement.isElement()) sName = nameelement.text() ;
+
+         QDomElement extensionuuid = metadataelement.firstChildElement("uuid") ;
+         if (extensionuuid.isElement()) {
+             sUuid = extensionuuid.text() ;
+         }
+
      }
 
      // Load Waypoints
@@ -315,6 +325,13 @@ bool PoiCollection::loadGpx(QString filename)
 
             if (!poiext.isNull()) {
 
+                // Set waypoint UUID
+                QDomElement extensionuuid = poiext.firstChildElement("poix::Uuid") ;
+                if (extensionuuid.isElement()) {
+                    ent.setUuid(extensionuuid.text()) ;
+                }
+
+                // Set waypoint field entries
                 extractXmlData(poiext, "poix::EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
                 extractXmlData(poiext, "poix::EditedDoorNumber", PoiEntry::EDITEDDOOR, ent) ;
                 extractXmlData(poiext, "poix::EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
@@ -481,6 +498,12 @@ bool PoiCollection::saveGpx(QString filename)
      metadata.appendChild(name) ;
      gpx.appendChild(metadata) ;
 
+     // Store the collection uuid
+     QDomElement extensionuuid = doc.createElement("uuid") ;
+     extensionuuid.appendChild(doc.createTextNode(sUuid)) ;
+     metadata.appendChild(extensionuuid) ;
+
+
      for (int i=0; i<poiList.size(); i++) {
 
         PoiEntry& ent = poiList[i] ;
@@ -515,6 +538,11 @@ bool PoiCollection::saveGpx(QString filename)
         storeXmlData(doc, PoiEntry::EDITEDDESCR, ent, wpt, "desc") ;
         storeXmlData(doc, PoiEntry::EDITEDSYMBOL, ent, wpt, "sym") ;
         storeXmlData(doc, PoiEntry::EDITEDTYPE, ent, wpt, "type") ;
+
+        // Append UUID
+        QDomElement waypointuuid = doc.createElement("poix::Uuid") ;
+        waypointuuid.appendChild(doc.createTextNode(ent.uuid())) ;
+        poiext.appendChild(waypointuuid) ;
 
         storeXmlData(doc, PoiEntry::GEODOOR, ent, poiext, "poix::GeoDoorNumber") ;
         storeXmlData(doc, PoiEntry::GEOSTREET, ent, poiext, "poix::GeoStreet") ;
@@ -1038,6 +1066,7 @@ void PoiEntry::copyFrom(PoiEntry& source)
         set( (PoiEntry::FieldType)i, source.get( (PoiEntry::FieldType)i ) ) ;
     }
     setLatLon(source.lat(), source.lon()) ;
+    setSequence(source.sequence());
     valid=true ;
     dirty=false ;
 }

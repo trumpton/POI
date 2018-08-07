@@ -16,6 +16,7 @@ class GoogleMapsWidget: public WebAccess
 private:
     QString apiKey ;
     QString cachedWorkingCollectionUuid ;
+    QString cachedFileCollectionUuid ;
     QString cachedTrackCollectionUuid ;
 
 signals:
@@ -44,7 +45,8 @@ public:
     ~GoogleMapsWidget() ;
 
     // Initialise key, workingcollection and load web page
-    void initialise(QString apiKey, QString workingUuid, QString trackUuid) ;
+    void initialise(QString apiKey, QString initialWorkingUuid, QString initialFileUuid, QString initialTrackUuid) ;
+    void registerUuids(QString workingUuid, QString fileUuid, QString trackUuid) ;
     void clearCookies() ;
 
     // Show Route Lines
@@ -73,8 +75,7 @@ public:
 
 private:
     // Initialise Javascript and set working collection uuid
-    void initialiseJavascript(QString uuid, QString trackUuid) ;
-
+    void initialiseJavascript() ;
     void runJavaScript(QString command) ;
 
 #ifdef WEBENGINE

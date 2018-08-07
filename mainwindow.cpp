@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Configure and Load Web Pages
     QString key = configuration->key() ;
     if (key.isEmpty()) key=QString(GOOGLEAPIKEY) ;
-    ui->googlemapsWebView->initialise(key, workingCollection.uuid(), fileCollection.trackUuid()) ;
+    ui->googlemapsWebView->initialise(key, workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
 
     // TODO: Shouldn't need these
     ui->googlemapsWebView->clearCookies() ;
@@ -112,7 +112,10 @@ QString MainWindow::buildFilename()
     bool lastwasspace=true ;
     for (int i=0; i<name.length(); i++) {
         QChar ch = name.at(i) ;
-        if (!ch.isLetterOrNumber()) {
+        if (ch==QChar('-') || ch==QChar('_')) {
+            formattedname = formattedname + ch ;
+            lastwasspace=true ;
+        } else if (!ch.isLetterOrNumber()) {
             lastwasspace=true ;
         } else {
             if (lastwasspace) {
@@ -129,12 +132,12 @@ QString MainWindow::buildFilename()
         formattedname = formattedname + QString("_") + QString::number((long int)(duration/60)) + QString("h") + (duration%60<10?QString("0"):QString("")) + QString::number((long int)(duration%60)) ;
     }
 
-    long int distance = fileCollection.trackLength() ;
+    double distance = fileCollection.trackLength() ;
     if (!formattedname.isEmpty() && distance>0) {
         formattedname = formattedname + QString("_") + QString::number(distance/1000,'f',1) + QString("km") ;
     }
 
-    long int climb = fileCollection.heightGain() ;
+    double climb = fileCollection.heightGain() ;
     if (!formattedname.isEmpty() && climb>0) {
         formattedname = formattedname + QString("_") + QString::number(climb,'f',0) + QString("m") ;
     }
@@ -179,8 +182,46 @@ void MainWindow::saveCollection(bool autoyes)
 
             if (!fileCollection.filename().isEmpty()) {
 
+                // Save the collection
                 fileCollection.saveGpx() ;
-                if (fileCollection.trackSize()==0) fileCollection.saveOv2() ;
+
+                if (fileCollection.trackSize()==0) {
+
+                    // There are no tracks, so save the OV2 file
+                    fileCollection.saveOv2() ;
+
+                } else {
+
+                    // There are tracks, so also update the "Tracks.gpx" and "Tracks.ov2" files
+
+                    // Create a New Waypoint entry, using the first waypoint, or the first track point
+                    // (pre-requisit is that the fileCollection() is already sorted)
+                    PoiEntry ent ;
+
+                    if (fileCollection.size()>0) {
+                        ent.copyFrom(fileCollection.at(0)) ;
+                    } else {
+                        ent.setLatLon(fileCollection.trackAt(0).lat(), fileCollection.at(0).lon()) ;
+                    }
+
+                    ent.setUuid(fileCollection.uuid()) ;
+                    ent.set(PoiEntry::EDITEDTITLE, fileCollection.name()) ;
+                    ent.setSequence(0) ;
+
+                    // Calculate tracks filename
+                    QFileInfo fi(fileCollection.filename()) ;
+                    QString trackfilename = fi.absolutePath() + "/" + "Tracks.gpx" ;
+                    PoiCollection tracks ;
+
+                    // Load existing data
+                    tracks.loadGpx(trackfilename) ;
+
+                    // Update the entry and save
+                    tracks.remove(ent.uuid()) ;
+                    tracks.add(ent) ;
+                    tracks.saveGpx() ;
+                    tracks.saveOv2() ;
+                }
 
             }
         }

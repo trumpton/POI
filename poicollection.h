@@ -186,6 +186,8 @@ public:
 
 
     const QString& uuid() ;
+    void setUuid(QString uuid) ;
+
     const QString& trackUuid() ;
 
     bool add(PoiEntry& newEntry) ;

@@ -24,11 +24,12 @@ GoogleMapsWidget::~GoogleMapsWidget()
 {
 }
 
-void GoogleMapsWidget::initialise(QString key, QString workingUuid, QString trackUuid)
+void GoogleMapsWidget::initialise(QString key, QString initialWorkingUuid, QString initialFileUuid, QString initialTrackUuid)
 {
-    // Save uuid
-    cachedWorkingCollectionUuid = workingUuid ;
-    cachedTrackCollectionUuid = trackUuid ;
+
+    cachedWorkingCollectionUuid = initialWorkingUuid ;
+    cachedFileCollectionUuid = initialFileUuid ;
+    cachedTrackCollectionUuid = initialTrackUuid ;
 
     // Load the html for the page
     QUrl url = QUrl("qrc:///googlemaps/google_maps.html") ;
@@ -41,6 +42,7 @@ void GoogleMapsWidget::initialise(QString key, QString workingUuid, QString trac
     setHtml(html, url) ;
 
 }
+
 
 void GoogleMapsWidget::initialise2(bool ok)
 {
@@ -55,8 +57,8 @@ void GoogleMapsWidget::initialise2(bool ok)
         this->page()->setWebChannel(&channel) ;
         channel.registerObject("GoogleMapsWidget", this) ;
         // Finally, initialise the javascript (connect to channel & register workingcollectionuuid)
-        initialiseJavascript(cachedWorkingCollectionUuid, cachedTrackCollectionUuid) ;
-
+        initialiseJavascript() ;
+        registerUuids(cachedWorkingCollectionUuid, cachedFileCollectionUuid, cachedTrackCollectionUuid);
 
     } else {
         QMessageBox::information(NULL, "Error", "Error, unable to load Google Maps") ;
@@ -121,15 +123,21 @@ void GoogleMapsWidget::runJavaScript(QString command)
 //
 // Collection identification
 //
-
-void GoogleMapsWidget::initialiseJavascript(QString workingUuid, QString trackUuid)
+void GoogleMapsWidget::registerUuids(QString workingUuid, QString fileUuid, QString trackUuid)
 {
-    QString str = QString("initialise(\"%1\", \"%2\");").arg(workingUuid).arg(trackUuid) ;
+    cachedWorkingCollectionUuid = workingUuid ;
+    cachedFileCollectionUuid = fileUuid ;
+    cachedTrackCollectionUuid = trackUuid ;
+    QString str = QString("registerUuids(\"%1\", \"%2\", \"%3\");").arg(workingUuid).arg(fileUuid).arg(trackUuid) ;
+    qDebug() << "GoogleMapsWidget::" << str ;
+    runJavaScript(str) ;
+}
 
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::initialiseJavascript() =>" ;
-    qDebug() << str ;
 
+void GoogleMapsWidget::initialiseJavascript()
+{
+    QString str = QString("initialise();") ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 
@@ -141,10 +149,7 @@ void GoogleMapsWidget::initialiseJavascript(QString workingUuid, QString trackUu
 void GoogleMapsWidget::showTracks(bool enabled)
 {
     QString str = QString("showTracks(%1);").arg(enabled?"true":"false") ;
-
-    qDebug() << "" ;
-    qDebug() << "GoogleMapsWidget::showTracks() =>" ;
-    qDebug() << str ;
+    qDebug() << "GoogleMapsWidget::" << str ;
     runJavaScript(str) ;
 }
 

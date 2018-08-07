@@ -25,6 +25,8 @@ void MainWindow::on_action_New_triggered()
     ui->action_ShowActualDuration->setChecked(false) ;
     ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
 
+    // Register new UUIDs
+    ui->googlemapsWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
     refresh(true) ;
 }
 
@@ -269,6 +271,8 @@ void MainWindow::on_action_Open_triggered()
             }
         }
     }
+    // Register New Collection UUIDs
+    ui->googlemapsWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
     refresh(true) ;
 }
 

@@ -3,12 +3,6 @@
 
 // FEATURES:
 
-// BUG: ov2 import adds 2 of each entry
-
-// TODO: Export to TomTOm should default in the Poi folder
-
-// TODO: Check OV2 handles stars OK
-
 // BUG: Select blue then green, and form fields are grey
 //      Select red then green, and some form fields are black when they should be disabled (grey)
 //
@@ -124,7 +118,7 @@ void MainWindow::saveCollection(bool autoyes)
             if (fileCollection.filename().isEmpty()) {
 
                 // Get filename
-                QString formattedName = fileCollection.formattedName(true, false, false) ;
+                QString formattedName = fileCollection.formattedName(false, false, false, false, true, false) ;
 
                 // Get Folder
                 QString folder ;
@@ -180,7 +174,7 @@ void MainWindow::saveCollection(bool autoyes)
 
                     ent.setUuid(fileCollection.uuid()) ;
 
-                    QString name = fileCollection.formattedName(false) ;
+                    QString name = fileCollection.formattedName(true, true, true, false, false, false) ;
                     ent.set(PoiEntry::EDITEDTITLE, name) ;
                     ent.setSequence(0) ;
 

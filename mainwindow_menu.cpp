@@ -192,6 +192,7 @@ void MainWindow::on_action_ImportOv2_triggered()
         }
 
         // Re-load (so that the input is marked as dirty)
+        fileCollection.clear() ;
         fileCollection.importOv2(importName) ;
 
         refresh(true) ;

@@ -272,7 +272,7 @@ void PoiCollection::setName(QString name) {
 }
 
 
-QString& PoiCollection::formattedName(bool asfilename, bool includerating, bool includedetails, bool starasasterisk)
+QString& PoiCollection::formattedName(bool includerating, bool includeduration, bool includedistance, bool includeheight, bool asfilename, bool starasasterisk)
 {
     sFormattedName.clear() ;
 
@@ -302,17 +302,21 @@ QString& PoiCollection::formattedName(bool asfilename, bool includerating, bool 
         }
     }
 
-    if (includedetails) {
+    if (includeduration) {
         long int duration = trackTimeEst() ;
         if (!sFormattedName.isEmpty() && duration>0) {
             sFormattedName = sFormattedName + QString(" ") + QString::number((long int)(duration/60)) + QString("h") + (duration%60<10?QString("0"):QString("")) + QString::number((long int)(duration%60)) ;
         }
+    }
 
+    if (includedistance) {
         double distance = trackLength() ;
         if (!sFormattedName.isEmpty() && distance>0) {
             sFormattedName = sFormattedName + QString(" ") + QString::number(distance/1000,'f',1) + QString("km") ;
         }
+    }
 
+    if (includeheight) {
         double climb = heightGain() ;
         if (!sFormattedName.isEmpty() && climb>0) {
             sFormattedName = sFormattedName + QString(" ") + QString::number(climb,'f',0) + QString("m") ;
@@ -574,7 +578,7 @@ bool PoiCollection::saveGpx(QString filename)
 
      // Store the formatted name
      QDomElement name = doc.createElement("name") ;
-     QString formattedname = formattedName(false) ;
+     QString formattedname = formattedName(true, true, true, true, false, false) ;
      QDomText text = doc.createTextNode(formattedname) ;
      name.appendChild(text) ;
      metadata.appendChild(name) ;
@@ -714,7 +718,7 @@ bool PoiCollection::saveGpx(QString filename)
          gpx.appendChild(trk) ;
 
          QDomElement trkname = doc.createElement("name");
-         QDomText trktext = doc.createTextNode(formattedName(false, true, false, true)) ;
+         QDomText trktext = doc.createTextNode(formattedName(true, true, true, true, false, true)) ;
          trkname.appendChild(trktext) ;
          trk.appendChild(trkname) ;
 

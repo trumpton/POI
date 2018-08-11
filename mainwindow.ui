@@ -1705,12 +1705,12 @@
   </action>
   <action name="actionTransfer_to_Garmin">
    <property name="text">
-    <string>&amp;Write to Garmin</string>
+    <string>&amp;Save Tracks to Garmin</string>
    </property>
   </action>
   <action name="actionTransfer_from_Garmin">
    <property name="text">
-    <string>&amp;Read from Garmin</string>
+    <string>&amp;Load Tracks from Garmin</string>
    </property>
   </action>
  </widget>
@@ -1732,8 +1732,8 @@
   <tabstop>btnDelete</tabstop>
  </tabstops>
  <resources>
-  <include location="googlemaps.qrc"/>
   <include location="icons.qrc"/>
+  <include location="googlemaps.qrc"/>
  </resources>
  <connections/>
 </ui>

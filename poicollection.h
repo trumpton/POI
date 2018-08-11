@@ -230,7 +230,7 @@ public:
     void setName(QString name) ;
 
     // Formatted Name (inc rating, time etc)
-    QString& formattedName(bool asfilename, bool includerating=true, bool includedetails=true, bool starasasterisk=false) ;
+    QString& formattedName(bool includerating, bool includeduration, bool includedistance, bool includeheight, bool asfilename, bool starasasterisk=false) ;
 
 
 private:

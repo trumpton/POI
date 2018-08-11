@@ -154,6 +154,8 @@ private:
     QString sUuid ;
     QString sTrackUuid ;
     QString sName ;
+    QString sFormattedName ;
+    int iRating ;
 
     QList<PoiEntry> poiList ;
     QList<TrackEntry> trackList ;
@@ -177,6 +179,9 @@ public:
     bool clear() ;
     bool isDirty() ;
     QString& getSequenceText() ;
+
+    int setRating(int rating) ;
+    int rating() ;
 
     double trackLength() ;
     double heightGain() ;
@@ -223,6 +228,10 @@ public:
     // Name access
     QString& name() ;
     void setName(QString name) ;
+
+    // Formatted Name (inc rating, time etc)
+    QString& formattedName(bool asfilename, bool includerating=true, bool includedetails=true, bool starasasterisk=false) ;
+
 
 private:
 

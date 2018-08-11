@@ -17,14 +17,29 @@ public:
     explicit Configuration(QWidget *parent = 0);
     ~Configuration();
     QString& key() ;
-    QString& configFolder() ;
+
+    QString& poiFolder() ;
+    QString& tracksFolder() ;
+    QString& importFolder() ;
+    QString& garminFolder() ;
+    QString& importFilter() ;
+    bool importMove() ;
+
+    QString& openFolder() ;
+    void setOpenFolder(QString folder) ;
+
     int exec() ;
 
 private slots:
-    void on_pushButton_clicked();
+    void on_pushButton_SearchPoi_clicked();
+    void on_pushButton_SearchGarmin_clicked();
+    void on_pushButton_SearchTracks_clicked();
+
+    void on_pushButton_SearchImport_clicked();
 
 private:
-    QString sKey, sFileName ;       // Google Key & file save folder
+    QString sKey, sFileName, sGarmin, sTracks, sImportFolder, sOpenFolder , sImport, sFilter;       // Google Key & file save folder
+    bool bMove ;
     QSettings *settings ;
     Ui::Configuration *ui;
 

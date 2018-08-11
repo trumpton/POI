@@ -2,14 +2,12 @@
 #include "ui_mainwindow.h"
 
 // FEATURES:
-//
-// 1. Loading new track that has no waypoints - add a waypoint into the clipboard for the start - give it the name of the file.
-// 2. Calculate and show track length, and height / descent
-// 3. Show duration - do something clever when adding new points with time.
-// 4. Store length / duration etc. in gpx description and perhaps filename
-// 5. Allow track name to be edited (Garmin doesn't use the filename)
-// 6. Add durations to summary
-// 7. Auto generate filename for Save As
+
+// BUG: ov2 import adds 2 of each entry
+
+// TODO: Export to TomTOm should default in the Poi folder
+
+// TODO: Check OV2 handles stars OK
 
 // BUG: Select blue then green, and form fields are grey
 //      Select red then green, and some form fields are black when they should be disabled (grey)
@@ -18,6 +16,7 @@
 // BUG: Delete waypoint from clipboard not working
 
 // BUG: Save as doesn't mark as saved
+
 
 
 #include <QDesktopServices>
@@ -29,6 +28,8 @@
 #include <QStringList>
 #include "apikeys.h"
 #include "prompt.h"
+
+#define STAR  QChar(0x2605)
 
 // TODO:
 //
@@ -67,6 +68,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->googlemapsWebView, &GoogleMapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
     connect(ui->googlemapsWebView, &GoogleMapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
 
+    // Handle Export Menu Refresh
+    connect(ui->menu_Export, &QMenu::aboutToShow, this, &MainWindow::on_menuExport_aboutToShow) ;
+
     refresh() ;
 }
 
@@ -104,47 +108,6 @@ TrackEntry& MainWindow::findTrackEntryByUuid(QString uuid, QString collectionUui
 //
 
 
-QString MainWindow::buildFilename()
-{
-    QString name, formattedname ;
-    name = fileCollection.name() ;
-
-    bool lastwasspace=true ;
-    for (int i=0; i<name.length(); i++) {
-        QChar ch = name.at(i) ;
-        if (ch==QChar('-') || ch==QChar('_')) {
-            formattedname = formattedname + ch ;
-            lastwasspace=true ;
-        } else if (!ch.isLetterOrNumber()) {
-            lastwasspace=true ;
-        } else {
-            if (lastwasspace) {
-                formattedname = formattedname + ch.toUpper() ;
-            } else {
-                formattedname = formattedname + ch.toLower() ;
-            }
-            lastwasspace=false ;
-        }
-    }
-
-    long int duration = fileCollection.trackTimeEst() ;
-    if (!formattedname.isEmpty() && duration>0) {
-        formattedname = formattedname + QString("_") + QString::number((long int)(duration/60)) + QString("h") + (duration%60<10?QString("0"):QString("")) + QString::number((long int)(duration%60)) ;
-    }
-
-    double distance = fileCollection.trackLength() ;
-    if (!formattedname.isEmpty() && distance>0) {
-        formattedname = formattedname + QString("_") + QString::number(distance/1000,'f',1) + QString("km") ;
-    }
-
-    double climb = fileCollection.heightGain() ;
-    if (!formattedname.isEmpty() && climb>0) {
-        formattedname = formattedname + QString("_") + QString::number(climb,'f',0) + QString("m") ;
-    }
-
-    return formattedname ;
-}
-
 void MainWindow::saveCollection(bool autoyes)
 {
     if (fileCollection.isDirty()) {
@@ -161,7 +124,18 @@ void MainWindow::saveCollection(bool autoyes)
             if (fileCollection.filename().isEmpty()) {
 
                 // Get filename
-                QString filename = QFileDialog::getSaveFileName(this, QString("Save File"), buildFilename(), QString("GPX Files (*.gpx)")) ;
+                QString formattedName = fileCollection.formattedName(true, false, false) ;
+
+                // Get Folder
+                QString folder ;
+                if (fileCollection.trackLength()==0) {
+                    folder = configuration->poiFolder() ;
+                } else {
+                    folder = configuration->tracksFolder() ;
+                }
+                if (!folder.isEmpty()) folder = folder + QString("/") ;
+
+                QString filename = QFileDialog::getSaveFileName(this, QString("Save File"), folder + formattedName, QString("GPX Files (*.gpx)")) ;
 
                 // Add extension if missing
                 QRegularExpression re(".*\\.gpx", QRegularExpression::CaseInsensitiveOption) ;
@@ -205,22 +179,36 @@ void MainWindow::saveCollection(bool autoyes)
                     }
 
                     ent.setUuid(fileCollection.uuid()) ;
-                    ent.set(PoiEntry::EDITEDTITLE, fileCollection.name()) ;
+
+                    QString name = fileCollection.formattedName(false) ;
+                    ent.set(PoiEntry::EDITEDTITLE, name) ;
                     ent.setSequence(0) ;
+
+                    QString typetxt ;
+                    for (int i=fileCollection.rating(); i>0; i--) {
+                        typetxt = typetxt + QString("★") ;
+                    }
+                    ent.set(PoiEntry::EDITEDTYPE, typetxt) ;
 
                     // Calculate tracks filename
                     QFileInfo fi(fileCollection.filename()) ;
-                    QString trackfilename = fi.absolutePath() + "/" + "Tracks.gpx" ;
-                    PoiCollection tracks ;
+                    QString trackfilename = configuration->poiFolder() ;
 
-                    // Load existing data
-                    tracks.loadGpx(trackfilename) ;
+                    if (!trackfilename.isEmpty()) {
 
-                    // Update the entry and save
-                    tracks.remove(ent.uuid()) ;
-                    tracks.add(ent) ;
-                    tracks.saveGpx() ;
-                    tracks.saveOv2() ;
+                        trackfilename = trackfilename +  "/" + "Tracks.gpx" ;
+                        PoiCollection tracks ;
+
+                        // Load existing data
+                        tracks.loadGpx(trackfilename) ;
+
+                        // Update the entry and save
+                        tracks.remove(ent.uuid()) ;
+                        tracks.add(ent) ;
+                        tracks.saveGpx() ;
+                        tracks.saveOv2() ;
+
+                    }
                 }
 
             }
@@ -248,6 +236,9 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         updateSearchFilter() ;
         updateList(&workingCollection, ui->listWorking) ;
         updateList(&fileCollection, ui->listFile, ui->comboBox_Filter->currentText()) ;
+
+        // Set Rating
+        ui->comboBox_Rating->setCurrentIndex(fileCollection.rating());
 
         // Redraw the Map
         if (refreshMarkers) refreshMap() ;
@@ -314,6 +305,17 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
     }
 }
 
+void MainWindow::on_menuExport_aboutToShow()
+{
+    QString garminfolder = configuration->garminFolder() ;
+    bool garminexists = false ;
+    if (!garminfolder.isEmpty()) {
+        QDir garmin(garminfolder) ;
+        garminexists = garmin.isReadable() ;
+    }
+    ui->actionTransfer_to_Garmin->setEnabled(garminexists) ;
+    ui->actionTransfer_from_Garmin->setEnabled(garminexists) ;
+}
 
 bool MainWindow::updateMapSelection(int zoom)
 {
@@ -375,24 +377,28 @@ bool MainWindow::updateSearchFilter()
 
         QStringList filterEntries ;
         for (int i=0; i<fileCollection.size(); i++) {
-            QRegExp re("[^a-zA-Z0-9]") ;
+            QRegExp re("[^a-zA-Z0-9★]") ;
             PoiEntry& file = fileCollection.at(i) ;
             QString type = file.get(PoiEntry::EDITEDTYPE) ;
             QStringList ents = type.replace(re, " ").toLower().split(" ") ;
             for (int j=0; j<ents.size(); j++) {
                 QString ent = ents.at(j) ;
                 if (!ent.isEmpty()) {
+
                     // Capitalise
                     ent.replace(0, 1, ent.at(0).toUpper()) ;
+
                     // Search if already exists
                     bool found = false ;
                     for (int k=0; k<filterEntries.size(); k++) {
                         if (filterEntries.at(k).compare(ent)==0) found=true ;
                     }
+
                     // Add entry to list
                     if (!found) {
                         filterEntries.append(ent) ;
                     }
+
                 }
             }
         }
@@ -405,7 +411,8 @@ bool MainWindow::updateSearchFilter()
         ui->comboBox_Filter->addItem("") ;
 
         for (int i=0; i<filterEntries.size(); i++) {
-            ui->comboBox_Filter->addItem(filterEntries.at(i));
+            QString ent = filterEntries.at(i) ;
+            ui->comboBox_Filter->addItem(ent);
             if (filterEntries.at(i).compare(currentText)==0) {
                 ui->comboBox_Filter->setCurrentIndex(i+1);
             }
@@ -416,6 +423,9 @@ bool MainWindow::updateSearchFilter()
 
 bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QString filterText)
 {
+    bool isstar = (filterText.size()>0 && filterText.at(0) == STAR) ;
+    bool selectall = filterText.isEmpty() ;
+
     if (collection==NULL || widget==NULL) return false ;
 
     widget->blockSignals(true) ;
@@ -428,7 +438,7 @@ bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QStr
     for (int i=0; i<size; i++) {
         QString type = collection->at(i).get(PoiEntry::EDITEDTYPE).toLower() ;
 
-        if (filterText.isEmpty() || type.contains(filterText)) {
+        if (selectall || (isstar && type.compare(filterText)==0) || (!isstar && type.contains(filterText))) {
 
             QString title = collection->at(i).get(PoiEntry::EDITEDTITLE) ;
             QString sequence ;
@@ -551,5 +561,11 @@ void MainWindow::on_comboBox_Filter_currentIndexChanged(int index)
 void MainWindow::on_lineEdit_fileTitle_editingFinished()
 {
     fileCollection.setName(ui->lineEdit_fileTitle->text()) ;
+}
+
+
+void MainWindow::on_comboBox_Rating_currentIndexChanged(int index)
+{
+    fileCollection.setRating(index) ;
 }
 

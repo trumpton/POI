@@ -6,6 +6,8 @@
 #include <QDebug>
 #include <math.h>
 
+#define STAR  QChar(0x2605)
+
 //
 // Duration Calculations:
 //
@@ -103,6 +105,17 @@ QString& PoiCollection::getSequenceText()
     return sLastSavedSequence ;
 }
 
+
+int PoiCollection::rating()
+{
+    return iRating ;
+}
+
+int PoiCollection::setRating(int rating)
+{
+    iRating = rating ;
+}
+
 void PoiCollection::updateLastEdited()
 {
     QDateTime now = QDateTime::currentDateTimeUtc() ;
@@ -127,6 +140,7 @@ bool PoiCollection::clear()
     dtracktime = 0 ;
     dtracktimeest = 0 ;
     sName = "" ;
+    iRating = 0 ;
     return true ;
 }
 
@@ -257,6 +271,61 @@ void PoiCollection::setName(QString name) {
     bListDirty = true ;
 }
 
+
+QString& PoiCollection::formattedName(bool asfilename, bool includerating, bool includedetails, bool starasasterisk)
+{
+    sFormattedName.clear() ;
+
+    if (includerating && iRating>0) {
+        for (int i=0; i<iRating; i++) {
+            sFormattedName = sFormattedName + STAR ;
+        }
+        sFormattedName = sFormattedName + QString(" ") ;
+    }
+
+    bool lastwasspace=true ;
+    for (int i=0; i<sName.length(); i++) {
+        QChar ch = sName.at(i) ;
+        if (ch==QChar('-') || ch==QChar('_')) {
+            lastwasspace=true ;
+            sFormattedName = sFormattedName + ch ;
+        } else if (!ch.isLetterOrNumber()) {
+            lastwasspace=true ;
+            if (!asfilename) sFormattedName = sFormattedName + ch ;
+        } else {
+            if (lastwasspace) {
+                sFormattedName = sFormattedName + ch.toUpper() ;
+            } else {
+                sFormattedName = sFormattedName + ch.toLower() ;
+            }
+            lastwasspace=false ;
+        }
+    }
+
+    if (includedetails) {
+        long int duration = trackTimeEst() ;
+        if (!sFormattedName.isEmpty() && duration>0) {
+            sFormattedName = sFormattedName + QString(" ") + QString::number((long int)(duration/60)) + QString("h") + (duration%60<10?QString("0"):QString("")) + QString::number((long int)(duration%60)) ;
+        }
+
+        double distance = trackLength() ;
+        if (!sFormattedName.isEmpty() && distance>0) {
+            sFormattedName = sFormattedName + QString(" ") + QString::number(distance/1000,'f',1) + QString("km") ;
+        }
+
+        double climb = heightGain() ;
+        if (!sFormattedName.isEmpty() && climb>0) {
+            sFormattedName = sFormattedName + QString(" ") + QString::number(climb,'f',0) + QString("m") ;
+        }
+    }
+
+    if (starasasterisk) sFormattedName = sFormattedName.replace(STAR, '*') ;
+    if (asfilename) sFormattedName = sFormattedName.replace(" ","_") ;
+
+    return sFormattedName ;
+}
+
+
 bool PoiCollection::loadGpx(QString filename)
 {
     int seq = 0 ;
@@ -282,12 +351,22 @@ bool PoiCollection::loadGpx(QString filename)
 
      if (metadataelement.isElement()) {
 
-         QDomElement nameelement = metadataelement.firstChildElement("name") ;
-         if (nameelement.isElement()) sName = nameelement.text() ;
+         QDomElement name = doc.createElement("name") ;
+         QDomText text = doc.createTextNode(sName) ;
+         name.appendChild(text) ;
 
-         QDomElement extensionuuid = metadataelement.firstChildElement("uuid") ;
-         if (extensionuuid.isElement()) {
-             sUuid = extensionuuid.text() ;
+         QDomElement uuidelement = metadataelement.firstChildElement("poix::uuid") ;
+         if (uuidelement.isElement()) sUuid = uuidelement.text() ;
+
+         QDomElement ratingelement = metadataelement.firstChildElement("poix::rating") ;
+         if (ratingelement.isElement()) iRating = ratingelement.text().toInt() ;
+
+         QDomElement nameuserelement = metadataelement.firstChildElement("poix::name") ;
+         if (nameuserelement.isElement()) sName = nameuserelement.text() ;
+
+         if (sName.isEmpty()) {
+             QDomElement nameelement = metadataelement.firstChildElement("name") ;
+             if (nameelement.isElement()) sName = nameelement.text() ;
          }
 
      }
@@ -492,17 +571,31 @@ bool PoiCollection::saveGpx(QString filename)
      // Set the metadata
 
      QDomElement metadata = doc.createElement("metadata") ;
+
+     // Store the formatted name
      QDomElement name = doc.createElement("name") ;
-     QDomText text = doc.createTextNode(sName) ;
+     QString formattedname = formattedName(false) ;
+     QDomText text = doc.createTextNode(formattedname) ;
      name.appendChild(text) ;
      metadata.appendChild(name) ;
-     gpx.appendChild(metadata) ;
+
+     // Store the user-entered name
+     QDomElement poixname = doc.createElement("poix::name") ;
+     QDomText poixtext = doc.createTextNode(sName) ;
+     poixname.appendChild(poixtext) ;
+     metadata.appendChild(poixname) ;
 
      // Store the collection uuid
-     QDomElement extensionuuid = doc.createElement("uuid") ;
+     QDomElement extensionuuid = doc.createElement("poix::uuid") ;
      extensionuuid.appendChild(doc.createTextNode(sUuid)) ;
      metadata.appendChild(extensionuuid) ;
 
+     // Store the rating
+     QDomElement extensionrating = doc.createElement("poix::rating") ;
+     extensionrating.appendChild(doc.createTextNode(QString::number(iRating))) ;
+     metadata.appendChild(extensionrating) ;
+
+     gpx.appendChild(metadata) ;
 
      for (int i=0; i<poiList.size(); i++) {
 
@@ -621,7 +714,7 @@ bool PoiCollection::saveGpx(QString filename)
          gpx.appendChild(trk) ;
 
          QDomElement trkname = doc.createElement("name");
-         QDomText trktext = doc.createTextNode(sName) ;
+         QDomText trktext = doc.createTextNode(formattedName(false, true, false, true)) ;
          trkname.appendChild(trktext) ;
          trk.appendChild(trkname) ;
 
@@ -678,7 +771,7 @@ bool PoiCollection::saveOv2(QString filename)
     filename = filename.replace(".gpx", ".ov2") ;
 
     QFile outputstream(filename) ;
-    if (!outputstream.open(QIODevice::ReadWrite))
+    if (!outputstream.open(QIODevice::WriteOnly))
         return false ;
 
     bool success=true ;
@@ -839,9 +932,10 @@ bool PoiEntry::writeOv2(QFile& outputstream, int type)
     QString enttype ;
     bool lastchar=false ;
     for (int i=0; i<typesrc.length(); i++) {
-        if (!lastchar && typesrc.at(i).isLetter()) enttype = enttype + typesrc.at(i).toUpper() ;
-        lastchar = typesrc.at(i).isLetter() ;
+         if (!lastchar && typesrc.at(i).isLetter()) enttype = enttype + typesrc.at(i).toUpper() ;
+         lastchar = typesrc.at(i).isLetter() ;
     }
+    title = title.replace(STAR, '*') ;
     if (!enttype.isEmpty()) { title = enttype + ": " + title ; }
     if (!door.isEmpty()) { title = title + " [" + door + "]" ; }
     if (!phone.isEmpty()) { title = title  + ">" + phone ; }
@@ -970,12 +1064,14 @@ bool PoiEntry::importOv2(QFile& inputstream)
             return false ;
         } else {
             inputstream.read((int)total-5) ;
+            qDebug() << "OV2 1: deleted record" ;
             return true ;
         }
 
     } else if (b.at(0)==1) {
         // Skipper Record
         inputstream.read(20) ;
+        qDebug() << "OV2 1: skipper recors" ;
         return true;
 
     } else if (b.at(0)==2) {
@@ -1017,17 +1113,21 @@ bool PoiEntry::importOv2(QFile& inputstream)
             set(PoiEntry::EDITEDPHONE1, phone) ;
 
             setLatLon(lat, lon) ;
+
+            qDebug() << "OV2 2: " << description ;
+
             return true ;
         }
 
     } else {
         // Corrupt file
+
+        qDebug() << "OV2 " << (int)b.at(0) << ": ???" ;
+
         return false ;
 
     }
 }
-
-
 
 
 // Convert string to UTF-8

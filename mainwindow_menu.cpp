@@ -71,11 +71,6 @@ void MainWindow::on_actionClear_Cookies_triggered()
 }
 
 
-void MainWindow::on_action_LaunchTomTom_triggered()
-{
-
-    QDesktopServices::openUrl(QString(TOMTOMURL)) ;
-}
 
 
 void MainWindow::on_actionAuto_Geocode_triggered()
@@ -241,7 +236,8 @@ void MainWindow::on_action_ImportGpxToClipboard_triggered()
 
 void MainWindow::on_action_Open_triggered()
 {
-    QString filename = QFileDialog::getOpenFileName(this, QString("Load File"), QString(""), QString("GPX Files (*.gpx)")) ;
+    QString folder = configuration->openFolder() ;
+    QString filename = QFileDialog::getOpenFileName(this, QString("Load File"), folder, QString("GPX Files (*.gpx)")) ;
 
     saveCollection() ;
     fileCollection.clear() ;
@@ -251,11 +247,13 @@ void MainWindow::on_action_Open_triggered()
         if (!fileCollection.loadGpx(filename)) {
             thisCollectionUuid.clear() ;
         } else {
+
             thisCollectionUuid = fileCollection.uuid() ;
             bool hastracks = fileCollection.trackSize()>0 ;
             ui->action_ShowTrack->setChecked(hastracks) ;
 
             QFileInfo fileinfo(filename) ;
+            configuration->setOpenFolder(fileinfo.absolutePath());
 
             if (fileCollection.name().isEmpty()) fileCollection.setName(fileinfo.baseName().replace(".gpx","")) ;
             ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
@@ -438,4 +436,143 @@ void MainWindow::on_action_About_POI_triggered()
 void MainWindow::on_action_ShowActualDuration_triggered()
 {
     refresh(true) ;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Transfer Menu
+//
+
+void MainWindow::on_action_LaunchTomTom_triggered()
+{
+
+    QDesktopServices::openUrl(QString(TOMTOMURL)) ;
+}
+
+
+void MainWindow::on_actionTransfer_to_Garmin_triggered()
+{
+    QDir garmin(configuration->garminFolder()) ;
+    QDir tracks(configuration->tracksFolder()) ;
+
+    if (!garmin.isReadable()) {
+        QMessageBox::information(this, QString("POI"), QString("Unable to access Garmin device.  Is it connected, and is the folder configured in setup?"), QMessageBox::Ok) ;
+        return ;
+    }
+
+    if (!tracks.isReadable()) {
+        QMessageBox::information(this, QString("POI"), QString("Unable access the tracks folder.  Check it is correctly setup"), QMessageBox::Ok) ;
+        return ;
+    }
+
+    tracks.setNameFilters(QStringList()<<"*.gpx");
+    QStringList fileList = tracks.entryList();
+
+    QProgressDialog dlg(QString("POI"), QString("Abort"), 0, fileList.size(), this) ;
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.show() ;
+
+    bool success = true ;
+
+    for (int i=0; success && i<fileList.size() ; i++) {
+
+        dlg.setValue(i) ;
+        QApplication::processEvents() ;
+
+        QString src = configuration->tracksFolder() + QDir::separator() + fileList.at(i) ;
+        QString dst = configuration->garminFolder() + QDir::separator() + fileList.at(i) ;
+
+        if (QFile::exists(dst)) { QFile::remove(dst); }
+
+        success &= QFile::copy(src, dst) ;
+
+        if (!success) {
+            QMessageBox::information(this, QString("POI"), QString("Error Transferring ") + fileList.at(i), QMessageBox::Ok) ;
+        }
+
+        if (dlg.wasCanceled()) {
+            QMessageBox::information(this, QString("POI"), QString("Transfer Aborted"), QMessageBox::Ok) ;
+            success=false ;
+        }
+
+    }
+
+#ifndef MSWINDOWS
+    system("/bin/sync") ;
+#endif
+
+    dlg.setValue(fileList.size());
+    dlg.hide() ;
+
+    if (success) {
+        QMessageBox::information(this, QString("POI"), QString("Transfer Complete. Ensure that the GPS is ejected before unplugging the cable."), QMessageBox::Ok) ;
+    }
+
+}
+
+
+void MainWindow::on_actionTransfer_from_Garmin_triggered()
+{
+    QDir garmin(configuration->garminFolder()) ;
+    QDir import(configuration->importFolder()) ;
+
+    if (!garmin.isReadable()) {
+        QMessageBox::information(this, QString("POI"), QString("Unable to access Garmin device.  Is it connected, and is the folder configured in setup?"), QMessageBox::Ok) ;
+        return ;
+    }
+
+    if (!import.isReadable()) {
+        QMessageBox::information(this, QString("POI"), QString("Unable access the import folder.  Check it is correctly setup"), QMessageBox::Ok) ;
+        return ;
+    }
+
+    garmin.setNameFilters(QStringList()<< configuration->importFilter());
+    QStringList fileList = garmin.entryList();
+
+    QProgressDialog dlg(QString("POI"), QString("Abort"), 0, fileList.size(), this) ;
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.show() ;
+    QApplication::processEvents() ;
+
+    bool success = true ;
+
+    for (int i=0; success && i<fileList.size() ; i++) {
+
+        dlg.setValue(i) ;
+        QApplication::processEvents() ;
+
+        QString src = configuration->garminFolder() + QDir::separator() + fileList.at(i) ;
+        QString dst = configuration->importFolder() + QDir::separator() + fileList.at(i) ;
+
+        if (QFile::exists(dst)) { QFile::remove(dst); }
+
+        success &= QFile::copy(src, dst) ;
+
+        if (success) {
+            if (configuration->importMove()) {
+                garmin.remove(src) ;
+            }
+        } else {
+            QMessageBox::information(this, QString("POI"), QString("Error Transferring ") + fileList.at(i), QMessageBox::Ok) ;
+        }
+
+        if (dlg.wasCanceled()) {
+            QMessageBox::information(this, QString("POI"), QString("Transfer Aborted"), QMessageBox::Ok) ;
+            success=false ;
+        }
+    }
+
+#ifndef MSWINDOWS
+    system("/bin/sync") ;
+#endif
+
+    QApplication::processEvents() ;
+    dlg.setValue(fileList.size());
+    dlg.hide() ;
+
+    if (success) {
+        QMessageBox::information(this, QString("POI"), QString("Transfer Complete."), QMessageBox::Ok) ;
+    }
+
 }

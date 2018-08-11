@@ -45,6 +45,8 @@ private slots:
     void on_actionClear_Cookies_triggered();
     void on_actionRefresh_Google_Map_triggered();
 
+    void on_menuExport_aboutToShow() ;
+
     // Edit
     void on_action_ShowTrack_toggled(bool arg1);
     void on_action_CreateTrackFromWaypoints_triggered();
@@ -105,6 +107,12 @@ private slots:
     void on_lineEdit_fileTitle_editingFinished();
 
     void on_action_ShowActualDuration_triggered();
+
+    void on_comboBox_Rating_currentIndexChanged(int index);
+
+    void on_actionTransfer_to_Garmin_triggered();
+
+    void on_actionTransfer_from_Garmin_triggered();
 
 private:
 

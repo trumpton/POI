@@ -23,6 +23,7 @@ public:
     QString& importFolder() ;
     QString& garminFolder() ;
     QString& importFilter() ;
+    QString& imageFolder() ;
     bool importMove() ;
 
     QString& openFolder() ;
@@ -34,11 +35,13 @@ private slots:
     void on_pushButton_SearchPoi_clicked();
     void on_pushButton_SearchGarmin_clicked();
     void on_pushButton_SearchTracks_clicked();
-
     void on_pushButton_SearchImport_clicked();
 
+
+    void on_pushButton_ImageFolder_clicked();
+
 private:
-    QString sKey, sFileName, sGarmin, sTracks, sImportFolder, sOpenFolder , sImport, sFilter;       // Google Key & file save folder
+    QString sKey, sFileName, sGarmin, sTracks, sImportFolder, sOpenFolder, sImageFolder, sImport, sFilter;       // Google Key & file save folder
     bool bMove ;
     QSettings *settings ;
     Ui::Configuration *ui;

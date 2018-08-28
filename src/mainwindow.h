@@ -7,7 +7,7 @@
 
 #include <QMainWindow>
 #include <QListWidget>
-
+#include <QPixmap>
 
 #define PREFZOOM 17
 
@@ -114,6 +114,10 @@ private slots:
 
     void on_actionTransfer_from_Garmin_triggered();
 
+    void on_action_Photo_triggered();
+
+    void on_actionResort_Waypoints_By_Date_triggered();
+
 private:
 
     // Update the lists and entry form
@@ -159,6 +163,7 @@ private:
     PoiEntry& findEntryByUuid(QString uuid, QString collectionUuid) ;
     TrackEntry& findTrackEntryByUuid(QString uuid, QString collectionUuid) ;
 
+    QPixmap nullpixmap ;
 
     Ui::MainWindow *ui;
     Configuration *configuration ;

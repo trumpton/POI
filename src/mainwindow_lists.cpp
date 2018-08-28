@@ -130,7 +130,7 @@ void MainWindow::on_btnStore_clicked()
         // Move the entry
         fileCollection.add(workingCollection.find(thisUuid)) ;
         workingCollection.remove(thisUuid) ;
-        fileCollection.sort() ;
+        fileCollection.sortBySequence(); ;
 
         // Modify the google map record
         ui->googlemapsWebView->setMarkerCollection(thisUuid, thisCollectionUuid) ;

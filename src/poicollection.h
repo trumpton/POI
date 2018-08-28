@@ -6,25 +6,8 @@
 #include <QFile>
 #include <QDomDocument>
 #include <QDateTime>
-
-//            //  OV2  GPXv1  GPXv3
-// TIME       //  no    yes    yes
-// ELEVATION  //  no    yes    yes
-// TITLE      //  yes   yes    yes
-// COMMENT    //  no    yes    yes
-// DESCR      //  no    yes    yes
-// DOOR       //  no    no     yes
-// STREET     //  no    no     yes
-// CITY       //  no    no     yes
-// STATE      //  no    no     yes
-// POSTCODE   //  no    no     yes
-// COUNTRY    //  no    no     yes
-// TYPE       //  no    yes    yes
-// SYMBOL     //  no    yes    yes
-// URL        //  no    yes    yes
-// PHONE1     //  yes   no     yes
-// PHONE2     //  no    no     yes
-// EMAIL      //  no    no     yes
+#include <QImage>
+#include <QPixmap>
 
 class PoiEntry {
 
@@ -52,6 +35,13 @@ public:
         EDITEDPHONE2,
         EDITEDEMAIL,
 
+        // Photo Input
+        PHOTOFILENAME,
+        PHOTOLAT,
+        PHOTOLON,
+        PHOTOELEVATION,
+        PHOTODATE,
+
         // Geocoded Results
         GEOELEVATION,
         GEODOOR,
@@ -60,6 +50,9 @@ public:
         GEOSTATE,
         GEOPOSTCODE,
         GEOCOUNTRY,
+
+        // Date / TIme
+        DATETIME,
 
         // Flags
         GEOCODED,
@@ -70,6 +63,8 @@ public:
 private:
     QString sUuid ;
     QString sFields[NUMFIELDTYPES] ;
+    QPixmap pPixmap ;
+    QDateTime tDate ;
 
     double dLat ;
     double dLon ;
@@ -86,7 +81,7 @@ public:
     PoiEntry() ;
     bool isValid() ;
     bool isDirty() ;
-    void markAsClean() ;
+    void markAsClean() ;    
 
     void clear() ;
 
@@ -101,6 +96,13 @@ public:
     void setLatLon(double lat, double lon) ;
     double lat() ;
     double lon() ;
+
+    bool setImage(QImage img) ;
+    QPixmap& pixmap() ;
+
+    // Date
+    void setDate(QString date) ;
+    QDateTime date() ;
 
     // Route Information
     void setSequence(int seq) ;
@@ -177,7 +179,10 @@ public:
     void setVersion(QString version) ;
     const QString& getVersion() ;
     bool clear() ;
+
     bool isDirty() ;
+    void markAsDirty() ;
+
     QString& getSequenceText() ;
 
     int setRating(int rating) ;
@@ -215,7 +220,10 @@ public:
     TrackEntry& trackAt(int i) ;
 
     // Sort the list by sequence number
-    void sort() ;
+    void sortBySequence() ;
+
+    // Reorder the list by waypoint date
+    void reorderWaypointByDate() ;
 
     // Import Files into current poiList
     bool importOv2(QString filename) ;

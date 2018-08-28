@@ -5,6 +5,8 @@
 #include <QDateTime>
 #include <QDebug>
 #include <math.h>
+#include <QDir>
+#include <QFileInfo>
 
 #define STAR  QChar(0x2605)
 
@@ -38,6 +40,11 @@ double _distanceFrom(double lat1, double lon1, double lat2, double lon2)
 
     return R * c ;
 }
+
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
 
 // ///////////////////////////////////////////////////////
 //
@@ -77,6 +84,9 @@ void PoiEntry::set(PoiEntry::FieldType type, QString data)
 
 const QString& PoiEntry::get(PoiEntry::FieldType type) { return sFields[(int)type] ; }
 
+void PoiEntry::setDate(QString date) {tDate.fromString(date, Qt::ISODate) ; }
+QDateTime PoiEntry::date() { return tDate ; }
+
 void PoiEntry::setLatLon(double lat, double lon) { dLat = lat ; dLon = lon ; valid=true ; dirty=true ; }
 double PoiEntry::lat() { return dLat ; }
 double PoiEntry::lon() { return dLon ; }
@@ -84,6 +94,182 @@ double PoiEntry::lon() { return dLon ; }
 void PoiEntry::setSequence(int seq) { iSequence = seq ; }
 const int PoiEntry::sequence() { return iSequence ; }
 
+bool PoiEntry::setImage(QImage img) {
+    bool status = pPixmap.convertFromImage(img.scaled(180,130)) ;
+    return status ;
+}
+
+QPixmap& PoiEntry::pixmap() { return pPixmap ; }
+
+bool PoiEntry::writeOv2(QFile& outputstream, int type)
+{
+    dirty=false ;
+    QByteArray buf = QByteArray(4, '\0') ;
+
+    QString door = get(PoiEntry::EDITEDDOOR) ;
+    QString title = get(PoiEntry::EDITEDTITLE) ;
+    QString phone = get(PoiEntry::EDITEDPHONE1) ;
+    QString typesrc = get(PoiEntry::EDITEDTYPE) ;
+
+    // Extract abbreviation for type
+    QString enttype ;
+    bool lastchar=false ;
+    for (int i=0; i<typesrc.length(); i++) {
+         if (!lastchar && typesrc.at(i).isLetter()) enttype = enttype + typesrc.at(i).toUpper() ;
+         lastchar = typesrc.at(i).isLetter() ;
+    }
+    title = title.replace(STAR, '*') ;
+    if (!enttype.isEmpty()) { title = enttype + ": " + title ; }
+    if (!door.isEmpty()) { title = title + " [" + door + "]" ; }
+    if (!phone.isEmpty()) { title = title  + ">" + phone ; }
+
+    QByteArray titlebuf = title.toLatin1() ;
+
+    buf[0]=type ;
+    outputstream.write(buf, 1) ;
+
+    buf = longToArray(titlebuf.length() + 1 + 13) ;
+    outputstream.write(buf) ;
+
+    buf = longToArray( (long int)(lon()*100000.0)) ;
+    outputstream.write(buf) ;
+
+    buf = longToArray( (long int)(lat()*100000.0)) ;
+    outputstream.write(buf) ;
+
+    outputstream.write(titlebuf) ;
+    outputstream.write("\0", 1) ;
+
+    return true ;
+}
+
+
+// Assume that OV2 is encoded as ISO-8859-1
+bool PoiEntry::importOv2(QFile& inputstream)
+{
+    if (inputstream.atEnd()) return false ;
+
+    QByteArray b = inputstream.read(1) ;
+
+    if (b.at(0)==0) {
+        // Deleted Record
+        long int total = arrayToLong(inputstream.read(4)) ;
+        if (total<6) {
+            return false ;
+        } else {
+            inputstream.read((int)total-5) ;
+            qDebug() << "OV2 1: deleted record" ;
+            return true ;
+        }
+
+    } else if (b.at(0)==1) {
+        // Skipper Record
+        inputstream.read(20) ;
+        qDebug() << "OV2 1: skipper recors" ;
+        return true;
+
+    } else if (b.at(0)==2) {
+
+        // POI Record
+        long int total = arrayToLong(inputstream.read(4)) ;
+        if (total<14) {
+            return false ;
+        } else {
+            // Lat/Lon
+            long int llon = arrayToLong(inputstream.read(4)) ;
+            long int llat = arrayToLong(inputstream.read(4)) ;
+            double lon = (double)llon / 100000.0;
+            double lat = (double)llat / 100000.0;
+
+            // Read and parse
+            QByteArray ba = inputstream.read((int)total-13) ;
+            QString description = toUtf8(ba) ;
+            QString door ;
+            QString phone ;
+
+            QRegExp rxq("^(.*)>(.+)>(.+)") ;
+            if (rxq.indexIn(description)>=0) {
+                description=rxq.cap(1).trimmed() ;
+                phone=rxq.cap(2).trimmed() ;
+            }
+            QRegExp rxp("^(.*)>(.+)") ;
+            if (rxp.indexIn(description)>=0) {
+                description=rxp.cap(1).trimmed() ;
+                phone=rxp.cap(2).trimmed() ;
+            }
+            QRegExp rxn("^(.*)\\[(.+)\\]") ;
+            if (rxn.indexIn(description)>=0) {
+                door=rxn.cap(2).trimmed() ;
+            }
+
+            set(PoiEntry::EDITEDTITLE, description) ;
+            set(PoiEntry::EDITEDDOOR, door) ;
+            set(PoiEntry::EDITEDPHONE1, phone) ;
+
+            setLatLon(lat, lon) ;
+
+            qDebug() << "OV2 2: " << description ;
+
+            return true ;
+        }
+
+    } else {
+        // Corrupt file
+
+        qDebug() << "OV2 " << (int)b.at(0) << ": ???" ;
+
+        return false ;
+
+    }
+}
+
+
+// Convert string to UTF-8
+QString PoiEntry::toUtf8(QByteArray ba)
+{
+    QString s = QString::fromUtf8(ba);
+    if (s.toUtf8() != ba) {
+      s = QString::fromLatin1(ba);
+    }
+    return s ;
+}
+
+long int PoiEntry::arrayToLong(QByteArray data)
+{
+    long int res ;
+    res = (unsigned char)data.at(0) ;
+    res += ((unsigned char)data.at(1)) << 8 ;
+    res += ((unsigned char)data.at(2)) << 16 ;
+    res += ((unsigned char)data.at(3)) << 24 ;
+    return res ;
+}
+
+QByteArray PoiEntry::longToArray(long int data)
+{
+    QByteArray res ;
+    res.append( (unsigned char)(data&0xFF)) ;
+    res.append( (unsigned char)((data>>8)&0xFF)) ;
+    res.append( (unsigned char)((data>>16)&0xFF)) ;
+    res.append( (unsigned char)((data>>24)&0xFF)) ;
+    return res ;
+}
+
+void PoiEntry::copyFrom(PoiEntry& source)
+{
+    for (int i=0; i<PoiEntry::NUMFIELDTYPES; i++) {
+        set( (PoiEntry::FieldType)i, source.get( (PoiEntry::FieldType)i ) ) ;
+    }
+    setLatLon(source.lat(), source.lon()) ;
+    setSequence(source.sequence());
+    valid=true ;
+    dirty=false ;
+}
+
+
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
 
 // ///////////////////////////////////////////////////////
 //
@@ -167,9 +353,16 @@ bool PoiCollection::isDirty()
     return dirty ;
 }
 
+void PoiCollection::markAsDirty() { bListDirty = true ; }
+
 bool poiLessThan (PoiEntry &v1, PoiEntry &v2)
 {
         return v1.sequence() < v2.sequence() ;
+}
+
+bool poiDateLessThan (PoiEntry &v1, PoiEntry &v2)
+{
+        return v1.date() < v2.date() ;
 }
 
 bool trackLessThan (TrackEntry &v1, TrackEntry &v2)
@@ -177,7 +370,7 @@ bool trackLessThan (TrackEntry &v1, TrackEntry &v2)
         return v1.sequence() < v2.sequence() ;
 }
 
-void PoiCollection::sort()
+void PoiCollection::sortBySequence()
 {
     qSort(poiList.begin(), poiList.end(), poiLessThan) ;
 
@@ -195,6 +388,19 @@ void PoiCollection::sort()
         seq+=2 ;
     }
 }
+
+void PoiCollection::reorderWaypointByDate()
+{
+    qSort(poiList.begin(), poiList.end(), poiDateLessThan) ;
+
+    int seq = 0 ;
+
+    for (int i=0; i<poiList.size(); i++) {
+        poiList[i].setSequence(seq) ;
+        seq+=2 ;
+    }
+}
+
 
 /***************************************************************************
 
@@ -339,6 +545,9 @@ bool PoiCollection::loadGpx(QString filename)
     clear() ;
     sFilename = filename ;
 
+    QFileInfo fileinfo(sFilename) ;
+    QDir gpxDir(fileinfo.absoluteDir());
+
     bool success=true ;
 
     QDomDocument doc;
@@ -434,7 +643,27 @@ bool PoiCollection::loadGpx(QString filename)
                 extractXmlData(poiext, "poix::Email", PoiEntry::EDITEDEMAIL, ent) ;
                 extractXmlData(poiext, "poix::URL", PoiEntry::EDITEDURL, ent) ;
                 extractXmlData(poiext, "poix::Geocoded", PoiEntry::GEOCODED, ent) ;
+                extractXmlData(poiext, "poix::Date", PoiEntry::DATETIME, ent) ;
 
+                // Extract date/time
+                QString date = ent.get(PoiEntry::DATETIME) ;
+                ent.setDate(date) ;
+
+                // Ensure photo path is absolute
+                extractXmlData(poiext, "poix::PhotoFilename", PoiEntry::PHOTOFILENAME, ent) ;
+                QString photopath = gpxDir.cleanPath(gpxDir.absoluteFilePath(ent.get(PoiEntry::PHOTOFILENAME)));
+                ent.set(PoiEntry::PHOTOFILENAME, photopath) ;
+
+                extractXmlData(poiext, "poix::PhotoLat", PoiEntry::PHOTOLAT, ent) ;
+                extractXmlData(poiext, "poix::PhotoLon", PoiEntry::PHOTOLON, ent) ;
+                extractXmlData(poiext, "poix::PhotoElevation", PoiEntry::PHOTOELEVATION, ent) ;
+                extractXmlData(poiext, "poix::PhotoDate", PoiEntry::PHOTODATE, ent) ;
+                QString photo = ent.get(PoiEntry::PHOTOFILENAME) ;
+                if (!photo.isEmpty()) {
+                    QImage img ;
+                    img.load(photo) ;
+                    ent.setImage(img) ;
+                }
 
             } else {
 
@@ -555,6 +784,9 @@ bool PoiCollection::saveGpx(QString filename)
     if (!filename.isEmpty()) sFilename = filename ;
     if (sFilename.isEmpty()) return false ;
 
+    QFileInfo filenameinfo(sFilename) ;
+    QDir savedir(filenameinfo.absoluteDir()) ;
+
     bool success=true ;
 
     QDomDocument doc;
@@ -619,8 +851,8 @@ bool PoiCollection::saveGpx(QString filename)
         wptext.appendChild(addr) ;
 
         // Set Lat/Lon
-        wpt.setAttribute("lat", QString("%1").arg(ent.lat())) ;
-        wpt.setAttribute("lon", QString("%1").arg(ent.lon())) ;
+        wpt.setAttribute("lat", QString::number(ent.lat(), 'f', 16)) ;
+        wpt.setAttribute("lon", QString::number(ent.lon(), 'f', 16)) ;
 
         storeXmlData(doc, PoiEntry::EDITEDPHONE1, ent, wptext, "gpxx::PhoneNumber", "Category", "Phone") ;
         storeXmlData(doc, PoiEntry::EDITEDPHONE2, ent, wptext, "gpxx::PhoneNumber", "Category", "Phone2") ;
@@ -658,6 +890,20 @@ bool PoiCollection::saveGpx(QString filename)
         storeXmlData(doc, PoiEntry::EDITEDEMAIL, ent, poiext, "poix::Email") ;
         storeXmlData(doc, PoiEntry::EDITEDURL, ent, poiext, "poix::URL") ;
         storeXmlData(doc, PoiEntry::GEOCODED, ent, poiext, "poix::Geocoded") ;
+        storeXmlData(doc, PoiEntry::DATETIME, ent, poiext, "poix::Date") ;
+
+        if (!ent.get(PoiEntry::PHOTOFILENAME).isEmpty()) {
+
+            // Ensure photo filename is relative to gpx save file
+            QString photofilename = ent.get(PoiEntry::PHOTOFILENAME) ;
+            photofilename = savedir.relativeFilePath(photofilename) ;
+            storeXmlData(doc, photofilename, poiext, "poix::PhotoFilename") ;
+
+            storeXmlData(doc, PoiEntry::PHOTOLAT, ent, poiext, "poix::PhotoLat") ;
+            storeXmlData(doc, PoiEntry::PHOTOLON, ent, poiext, "poix::PhotoLon") ;
+            storeXmlData(doc, PoiEntry::PHOTOELEVATION, ent, poiext, "poix::PhotoElevation") ;
+            storeXmlData(doc, PoiEntry::PHOTODATE, ent, poiext, "poix::PhotoDate") ;
+        }
 
         QString door, street, fullstreet, city, state, country, postcode ;
 
@@ -729,11 +975,13 @@ bool PoiCollection::saveGpx(QString filename)
             TrackEntry &ent = trackList[i] ;
             QDomElement trkpt = doc.createElement("trkpt") ;
             trkseg.appendChild(trkpt) ;
-            trkpt.setAttribute("lat", QString("%1").arg(ent.lat())) ;
-            trkpt.setAttribute("lon", QString("%1").arg(ent.lon())) ;
+
+            // Set Lat/Lon
+            trkpt.setAttribute("lat", QString::number(ent.lat(), 'f', 16)) ;
+            trkpt.setAttribute("lon", QString::number(ent.lon(), 'f', 16)) ;
 
             QDomElement eelev = doc.createElement("ele") ;
-            QDomText delev = doc.createTextNode(QString("%1").arg(ent.elev())) ;
+            QDomText delev = doc.createTextNode(QString::number(ent.elev(), 'f', 4)) ;
             eelev.appendChild(delev) ;
             trkpt.appendChild(eelev) ;
 
@@ -916,55 +1164,6 @@ TrackEntry& PoiCollection::findNextTrack(QString uuid)
     }
 }
 
-////////////////////////////////////////////////////////
-//
-// File I/O
-//
-//
-
-bool PoiEntry::writeOv2(QFile& outputstream, int type)
-{
-    dirty=false ;
-    QByteArray buf = QByteArray(4, '\0') ;
-
-    QString door = get(PoiEntry::EDITEDDOOR) ;
-    QString title = get(PoiEntry::EDITEDTITLE) ;
-    QString phone = get(PoiEntry::EDITEDPHONE1) ;
-    QString typesrc = get(PoiEntry::EDITEDTYPE) ;
-
-    // Extract abbreviation for type
-    QString enttype ;
-    bool lastchar=false ;
-    for (int i=0; i<typesrc.length(); i++) {
-         if (!lastchar && typesrc.at(i).isLetter()) enttype = enttype + typesrc.at(i).toUpper() ;
-         lastchar = typesrc.at(i).isLetter() ;
-    }
-    title = title.replace(STAR, '*') ;
-    if (!enttype.isEmpty()) { title = enttype + ": " + title ; }
-    if (!door.isEmpty()) { title = title + " [" + door + "]" ; }
-    if (!phone.isEmpty()) { title = title  + ">" + phone ; }
-
-    QByteArray titlebuf = title.toLatin1() ;
-
-    buf[0]=type ;
-    outputstream.write(buf, 1) ;
-
-    buf = longToArray(titlebuf.length() + 1 + 13) ;
-    outputstream.write(buf) ;
-
-    buf = longToArray( (long int)(lon()*100000.0)) ;
-    outputstream.write(buf) ;
-
-    buf = longToArray( (long int)(lat()*100000.0)) ;
-    outputstream.write(buf) ;
-
-    outputstream.write(titlebuf) ;
-    outputstream.write("\0", 1) ;
-
-    return true ;
-}
-
-
 // Import OV2 (See https://www.tomtom.com/lib/doc/ttnavsdk3_manual.pdf for format)
 bool PoiCollection::importOv2(QString filename)
 {
@@ -1054,127 +1253,10 @@ bool PoiCollection::calculateTrack()
 }
 
 
-// Assume that OV2 is encoded as ISO-8859-1
-bool PoiEntry::importOv2(QFile& inputstream)
-{
-    if (inputstream.atEnd()) return false ;
-
-    QByteArray b = inputstream.read(1) ;
-
-    if (b.at(0)==0) {
-        // Deleted Record
-        long int total = arrayToLong(inputstream.read(4)) ;
-        if (total<6) {
-            return false ;
-        } else {
-            inputstream.read((int)total-5) ;
-            qDebug() << "OV2 1: deleted record" ;
-            return true ;
-        }
-
-    } else if (b.at(0)==1) {
-        // Skipper Record
-        inputstream.read(20) ;
-        qDebug() << "OV2 1: skipper recors" ;
-        return true;
-
-    } else if (b.at(0)==2) {
-
-        // POI Record
-        long int total = arrayToLong(inputstream.read(4)) ;
-        if (total<14) {
-            return false ;
-        } else {
-            // Lat/Lon
-            long int llon = arrayToLong(inputstream.read(4)) ;
-            long int llat = arrayToLong(inputstream.read(4)) ;
-            double lon = (double)llon / 100000.0;
-            double lat = (double)llat / 100000.0;
-    
-            // Read and parse
-            QByteArray ba = inputstream.read((int)total-13) ;
-            QString description = toUtf8(ba) ;
-            QString door ;
-            QString phone ;
-
-            QRegExp rxq("^(.*)>(.+)>(.+)") ;
-            if (rxq.indexIn(description)>=0) {
-                description=rxq.cap(1).trimmed() ;
-                phone=rxq.cap(2).trimmed() ;
-            }
-            QRegExp rxp("^(.*)>(.+)") ;
-            if (rxp.indexIn(description)>=0) {
-                description=rxp.cap(1).trimmed() ;
-                phone=rxp.cap(2).trimmed() ;
-            }
-            QRegExp rxn("^(.*)\\[(.+)\\]") ;
-            if (rxn.indexIn(description)>=0) {
-                door=rxn.cap(2).trimmed() ;
-            }
-
-            set(PoiEntry::EDITEDTITLE, description) ;
-            set(PoiEntry::EDITEDDOOR, door) ;
-            set(PoiEntry::EDITEDPHONE1, phone) ;
-
-            setLatLon(lat, lon) ;
-
-            qDebug() << "OV2 2: " << description ;
-
-            return true ;
-        }
-
-    } else {
-        // Corrupt file
-
-        qDebug() << "OV2 " << (int)b.at(0) << ": ???" ;
-
-        return false ;
-
-    }
-}
-
-
-// Convert string to UTF-8
-QString PoiEntry::toUtf8(QByteArray ba)
-{
-    QString s = QString::fromUtf8(ba);
-    if (s.toUtf8() != ba) {
-      s = QString::fromLatin1(ba);
-    }
-    return s ;
-}
-
-long int PoiEntry::arrayToLong(QByteArray data)
-{
-    long int res ;
-    res = (unsigned char)data.at(0) ;
-    res += ((unsigned char)data.at(1)) << 8 ;
-    res += ((unsigned char)data.at(2)) << 16 ;
-    res += ((unsigned char)data.at(3)) << 24 ;
-    return res ;
-}
-
-QByteArray PoiEntry::longToArray(long int data)
-{
-    QByteArray res ;
-    res.append( (unsigned char)(data&0xFF)) ;
-    res.append( (unsigned char)((data>>8)&0xFF)) ;
-    res.append( (unsigned char)((data>>16)&0xFF)) ;
-    res.append( (unsigned char)((data>>24)&0xFF)) ;
-    return res ;
-}
-
-void PoiEntry::copyFrom(PoiEntry& source)
-{
-    for (int i=0; i<PoiEntry::NUMFIELDTYPES; i++) {
-        set( (PoiEntry::FieldType)i, source.get( (PoiEntry::FieldType)i ) ) ;
-    }
-    setLatLon(source.lat(), source.lon()) ;
-    setSequence(source.sequence());
-    valid=true ;
-    dirty=false ;
-}
-
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////
 
 // ///////////////////////////////////////////////////////
 //

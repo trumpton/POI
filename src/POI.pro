@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     mainwindow_mapcallback.cpp \
     mainwindow_menu.cpp \
     mainwindow_editdetails.cpp \
-    mainwindow_lists.cpp
+    mainwindow_lists.cpp \
+    easyexif/exif.cpp
 
 HEADERS  += mainwindow.h \
     googlemapswidget.h \
@@ -40,7 +41,8 @@ HEADERS  += mainwindow.h \
     apikeys.h \
     urls.h \
     prompt.h \
-    version.h
+    version.h \
+    easyexif/exif.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \

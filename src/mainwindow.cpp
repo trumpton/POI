@@ -40,6 +40,10 @@ MainWindow::MainWindow(QWidget *parent) :
     // Current Marker
     thisUuid="" ;
 
+    // Set up nullpixmap
+    QImage nullimage(":/icons/nullimage.png") ;
+    nullpixmap.convertFromImage(nullimage.scaled(180,130)) ;
+
     // Configuration and Configuration form
     configuration = new Configuration(this) ;
 
@@ -246,6 +250,10 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->groupBox_Details->setEnabled(false) ;
         ui->groupBox_Details->setVisible(false) ;
 
+        // Photo
+        ui->groupBox_Photo->setEnabled(false) ;
+        ui->groupBox_Photo->setVisible(false) ;
+
         // File Collection
         ui->btnEditFile->setEnabled(false) ;
         ui->btnCopyToClipboard->setEnabled(false) ;
@@ -266,6 +274,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->btnStore->setEnabled(true) ;
             ui->btnDuplicate->setEnabled(true) ;
             ui->btnDelete->setEnabled(true) ;
+            ui->groupBox_Photo->setVisible(true) ;
+            ui->groupBox_Photo->setEnabled(true) ;
 
         } else if (updateListSelection(&fileCollection, ui->listFile)) {
 
@@ -273,6 +283,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->groupBox_Details->setVisible(true) ;
             ui->btnEditFile->setEnabled(true) ;
             ui->btnCopyToClipboard->setEnabled(true) ;
+            ui->groupBox_Photo->setVisible(true) ;
+            ui->groupBox_Photo->setEnabled(true) ;
             if (ui->action_ShowTrack->isChecked()) {
                 ui->btnDown->setEnabled(true) ;
                 ui->btnUp->setEnabled(true) ;
@@ -335,6 +347,7 @@ bool MainWindow::updateForm()
         ui->lineEdit_Phone1->clear() ;
         ui->lineEdit_Phone2->clear() ;
         ui->lineEdit_Type->clear() ;
+        ui->labelImage->setPixmap(nullpixmap);
         return true ;
 
     } else {
@@ -361,6 +374,15 @@ bool MainWindow::updateForm()
             ui->label_MarkerPin->setVisible(false) ;
             ui->label_MarkerPinError->setVisible(true) ;
         }
+
+        if (!pe.pixmap().isNull()) {
+            ui->labelImage->setPixmap(pe.pixmap());
+            ui->groupBox_Photo->setEnabled(true);
+        } else {
+            ui->labelImage->setPixmap(nullpixmap);
+            ui->groupBox_Photo->setEnabled(false);
+        }
+
         return true ;
 
     }

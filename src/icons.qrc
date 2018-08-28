@@ -14,5 +14,6 @@
         <file>icons/editedmarker.png</file>
         <file>icons/down.png</file>
         <file>icons/up.png</file>
+        <file>icons/nullimage.png</file>
     </qresource>
 </RCC>

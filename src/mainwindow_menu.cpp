@@ -9,7 +9,7 @@
 
 #include "urls.h"
 #include "version.h"
-
+#include "easyexif/exif.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -44,6 +44,7 @@ void MainWindow::on_action_Save_triggered()
 void MainWindow::on_action_SaveAs_triggered()
 {
     fileCollection.setFilename(QString(""));
+    fileCollection.markAsDirty() ;
     saveCollection(true) ;
 }
 
@@ -129,6 +130,101 @@ void MainWindow::on_action_EmptyClipboard_triggered()
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+//
+// Import Menu
+//
+
+#include <QIODevice>
+
+easyexif::EXIFInfo getExif(QString fileName)
+{
+    easyexif::EXIFInfo info;
+    QFile CurrentFile(fileName);
+    if(!CurrentFile.open(QIODevice::ReadOnly)) return info;
+    QByteArray DataFile = CurrentFile.readAll();
+    info.parseFrom(DataFile.toStdString()) ;
+    return info ;
+}
+
+// Import Photo
+void MainWindow::on_action_Photo_triggered()
+{
+    bool success=true ;
+
+    // prompt for photo
+    QStringList fileNames = QFileDialog::getOpenFileNames(this,
+        tr("Select Photo"), configuration->imageFolder(), tr("JPG Files (*.jpg *.JPG *.png *.PNG)"));
+    if (fileNames.isEmpty()) return ;
+
+    for (int i=0; i<fileNames.count(); i++) {
+
+        // create new poientry
+        PoiEntry ent ;
+
+        QImage img ;
+
+        if (!img.load(fileNames.at(i))) {
+
+            success = false ;
+
+        } else {
+
+            ent.setImage(img) ;
+            ent.setSequence(9999) ;
+
+            QFileInfo fileinfo(fileNames.at(i)) ;
+            ent.set(PoiEntry::EDITEDTITLE, fileinfo.baseName());
+
+            // parse exif / tracks and store information
+            easyexif::EXIFInfo inf = getExif(fileNames.at(i)) ;
+            QString date = QString(inf.DateTime.data()) ;
+            double lat = inf.GeoLocation.Latitude ;
+            double lon = inf.GeoLocation.Longitude ;
+            double alt = inf.GeoLocation.Altitude ;
+            ent.set(PoiEntry::DATETIME, date) ;
+            ent.set(PoiEntry::PHOTODATE, date) ;
+            ent.set(PoiEntry::PHOTOFILENAME, fileNames.at(i)) ;
+            ent.set(PoiEntry::PHOTOLAT, QString("%1").arg(lat)) ;
+            ent.set(PoiEntry::PHOTOLON, QString("%1").arg(lon)) ;
+            ent.set(PoiEntry::PHOTOELEVATION, QString("%1").arg(alt)) ;
+            ent.setDate(date) ;
+
+            // If lat/lon not set, search for lat/lon using date in tracks
+            // TODO
+
+            // If lat/lon still not set, place it in screen centre
+            if (lat==0.0 && lon==0.0) {
+                lat = ui->googlemapsWebView->getLat() ;
+                lon = ui->googlemapsWebView->getLon() ;
+            }
+
+            ent.setLatLon(lat, lon) ;
+
+            // add waypoint to the list with title of the photo
+            // and re-sort so newest files end up at the end of the list
+            fileCollection.add(ent) ;
+            fileCollection.sortBySequence();
+        }
+    }
+
+    refresh(true) ;
+
+    if (!success) {
+        // Report, some files failed to load
+    }
+
+}
+
+
+void MainWindow::on_actionResort_Waypoints_By_Date_triggered()
+{
+    fileCollection.reorderWaypointByDate();
+    refresh(true) ;
+}
+
+
+// Import GPX
 void MainWindow::on_action_ImportGpx_triggered()
 {
     // Ask for the name of the input file
@@ -278,28 +374,28 @@ void MainWindow::on_action_Open_triggered()
 
 void MainWindow::on_btnUp_clicked()
 {
-    fileCollection.sort() ;
+    fileCollection.sortBySequence(); ;
     PoiEntry& thisEnt = fileCollection.find(thisUuid) ;
     PoiEntry& lastEnt = fileCollection.findPrev(thisUuid) ;
     if (thisEnt.isValid() && lastEnt.isValid()) {
         int seq = thisEnt.sequence() ;
         thisEnt.setSequence(lastEnt.sequence());
         lastEnt.setSequence(seq) ;
-        fileCollection.sort() ;
+        fileCollection.sortBySequence(); ;
         refresh(true) ;
     }
 }
 
 void MainWindow::on_btnDown_clicked()
 {
-    fileCollection.sort() ;
+    fileCollection.sortBySequence(); ;
     PoiEntry& thisEnt = fileCollection.find(thisUuid) ;
     PoiEntry& nextEnt = fileCollection.findNext(thisUuid) ;
     if (thisEnt.isValid() && nextEnt.isValid()) {
         int seq = thisEnt.sequence() ;
         thisEnt.setSequence(nextEnt.sequence());
         nextEnt.setSequence(seq) ;
-        fileCollection.sort() ;
+        fileCollection.sortBySequence(); ;
         refresh(true) ;
     }
 }
@@ -321,7 +417,7 @@ void MainWindow::on_NewTrackPoint_clicked()
     }
 
     // TODO: The file collection should already be sorted
-    fileCollection.sort() ;
+    fileCollection.sortBySequence(); ;
 
     TrackEntry& thisent = fileCollection.findTrack(thisUuid) ;
     TrackEntry& nextent = fileCollection.findNextTrack(thisUuid) ;
@@ -337,7 +433,7 @@ void MainWindow::on_NewTrackPoint_clicked()
         newpoint.setSequence(seq+1);
         fileCollection.add(newpoint) ;
         thisUuid = newpoint.uuid() ;
-        fileCollection.sort() ;
+        fileCollection.sortBySequence(); ;
         refresh(true) ;
     }
 }

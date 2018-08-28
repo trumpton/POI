@@ -49,6 +49,12 @@ QString& Configuration::importFolder()
     return sImport ;
 }
 
+QString& Configuration::imageFolder()
+{
+    sImageFolder = settings->value("image").toString() ;
+    return sImageFolder ;
+}
+
 QString& Configuration::importFilter()
 {
     sFilter = settings->value("filter").toString() ;
@@ -80,6 +86,7 @@ int Configuration::exec()
     ui->confPoiFolder->setText(poiFolder()) ;
     ui->confTracksFolder->setText(tracksFolder());
     ui->confImportFolder->setText(importFolder()) ;
+    ui->confImageFolder->setText(imageFolder()) ;
     ui->confGarminFolder->setText(garminFolder()) ;
     if (importMove()) {
         ui->radioButton_moveData->setChecked(true) ;
@@ -94,6 +101,7 @@ int Configuration::exec()
         settings->setValue("garmin", ui->confGarminFolder->text()) ;
         settings->setValue("tracks", ui->confTracksFolder->text()) ;
         settings->setValue("import", ui->confImportFolder->text()) ;
+        settings->setValue("image", ui->confImageFolder->text()) ;
         settings->setValue("filter", ui->importFilter->text()) ;
         settings->setValue("move", ui->radioButton_moveData->isChecked()) ;
 
@@ -145,4 +153,14 @@ void Configuration::on_pushButton_SearchImport_clicked()
                 QFileDialog::ShowDirsOnly) ;
     ui->confImportFolder->setText(results) ;
     sImport = results ;
+}
+
+void Configuration::on_pushButton_ImageFolder_clicked()
+{
+    QString results = QFileDialog::getExistingDirectory(0,
+                QString("Image Directory"),
+                imageFolder(),
+                QFileDialog::ShowDirsOnly) ;
+    ui->confImageFolder->setText(results) ;
+    sImageFolder = results ;
 }

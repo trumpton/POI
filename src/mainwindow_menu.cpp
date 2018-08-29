@@ -129,6 +129,35 @@ void MainWindow::on_action_EmptyClipboard_triggered()
     refresh(true) ;
 }
 
+// Undo currently handles moves only
+void MainWindow::on_actionUndo_triggered()
+{
+    switch (undo.nextType()) {
+        case Undo::PoiRecord: {
+                PoiEntry& extract = undo.popPoiEntry() ;
+                PoiEntry& searchFileCollection = fileCollection.find(extract.uuid()) ;
+                if (searchFileCollection.isValid()) {
+                    searchFileCollection.setLatLon(extract.lat(), extract.lon()) ;
+                }
+                PoiEntry& searchWorkingCollection = workingCollection.find(extract.uuid()) ;
+                if (searchWorkingCollection.isValid()) {
+                    searchWorkingCollection.setLatLon(extract.lat(), extract.lon());
+                }
+            }
+            refresh(true) ;
+            break ;
+        case Undo::TrackRecord: {
+                TrackEntry& extract = undo.popTrackEntry() ;
+                TrackEntry& searchFileCollection = fileCollection.findTrack(extract.uuid()) ;
+                if (searchFileCollection.isValid()) {
+                    searchFileCollection.setLatLon(extract.lat(), extract.lon());
+                }
+            }
+            refresh(true) ;
+            break ;
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -68,6 +68,7 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
 
     PoiEntry& pe = findEntryByUuid(uuid, collectionUuid) ;
     if (pe.isValid()) {
+        undo.pushPoiEntry(pe) ;
         pe.setLatLon(lat, lon) ;
         pe.set(PoiEntry::GEOCODED, "no") ;
         ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true);
@@ -76,10 +77,8 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
 
     TrackEntry &te = findTrackEntryByUuid(uuid, collectionUuid) ;
     if (te.isValid()) {
-
-        // Move Track Point
+        undo.pushTrackEntry(te);
         te.setLatLon(lat, lon) ;
-
         if (ui->actionSnap->isChecked()) {
             // Snap to POI
             double smallestdistance = 100 ;

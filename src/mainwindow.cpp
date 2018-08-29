@@ -305,6 +305,7 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->action_ReduceTrackPoints->setEnabled(fileCollection.trackSize()>0) ;
         ui->action_ShowTrack->setEnabled(fileCollection.size()>0) ;
         ui->action_EmptyClipboard->setEnabled(workingCollection.size()>0) ;
+        ui->actionUndo->setEnabled(undo.undoable()) ;
 
         mutex-- ;
         return true ;

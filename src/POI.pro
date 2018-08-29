@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     mainwindow_menu.cpp \
     mainwindow_editdetails.cpp \
     mainwindow_lists.cpp \
-    easyexif/exif.cpp
+    easyexif/exif.cpp \
+    undo.cpp
 
 HEADERS  += mainwindow.h \
     googlemapswidget.h \
@@ -42,7 +43,8 @@ HEADERS  += mainwindow.h \
     urls.h \
     prompt.h \
     version.h \
-    easyexif/exif.h
+    easyexif/exif.h \
+    undo.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \

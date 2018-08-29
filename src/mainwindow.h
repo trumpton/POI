@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QListWidget>
 #include <QPixmap>
+#include "undo.h"
 
 #define PREFZOOM 17
 
@@ -118,6 +119,8 @@ private slots:
 
     void on_actionResort_Waypoints_By_Date_triggered();
 
+    void on_actionUndo_triggered();
+
 private:
 
     // Update the lists and entry form
@@ -162,6 +165,8 @@ private:
     // Search the Working and Current POI Lists and return match
     PoiEntry& findEntryByUuid(QString uuid, QString collectionUuid) ;
     TrackEntry& findTrackEntryByUuid(QString uuid, QString collectionUuid) ;
+
+    Undo undo ;
 
     QPixmap nullpixmap ;
 

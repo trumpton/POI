@@ -1585,6 +1585,8 @@
     <addaction name="separator"/>
     <addaction name="action_EditAll"/>
     <addaction name="action_EmptyClipboard"/>
+    <addaction name="separator"/>
+    <addaction name="actionUndo"/>
    </widget>
    <widget class="QMenu" name="menu_Track">
     <property name="title">
@@ -1780,6 +1782,14 @@
   <action name="actionResort_Waypoints_By_Date">
    <property name="text">
     <string>Resort Waypoints By &amp;Date</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="text">
+    <string>&amp;Undo Move</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
    </property>
   </action>
  </widget>

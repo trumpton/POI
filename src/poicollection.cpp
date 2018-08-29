@@ -256,13 +256,10 @@ QByteArray PoiEntry::longToArray(long int data)
 
 void PoiEntry::copyFrom(PoiEntry& source)
 {
-    for (int i=0; i<PoiEntry::NUMFIELDTYPES; i++) {
-        set( (PoiEntry::FieldType)i, source.get( (PoiEntry::FieldType)i ) ) ;
-    }
-    setLatLon(source.lat(), source.lon()) ;
-    setSequence(source.sequence());
-    valid=true ;
-    dirty=false ;
+    QString thisId = sUuid ;
+    *this = source ;
+    sUuid = thisId ;
+    dirty = false ;
 }
 
 
@@ -1354,4 +1351,3 @@ bool TrackEntry::isDirty()
 {
     return bDirty ;
 }
-

@@ -112,19 +112,33 @@ public:
     bool importOv2(QFile& inputstream) ;
     bool writeOv2(QFile& outputstream, int type=2) ;
 
-    // PoiEntry Copy
+    // PoiEntry Copy All except for UUID
     void copyFrom(PoiEntry& source) ;
+
+    // Operator Assignment
+    void operator = (const PoiEntry &source ) {
+        sUuid = source.sUuid ;
+        for (int i=0; i<PoiEntry::NUMFIELDTYPES; i++) { sFields[i] = source.sFields[i] ; }
+        pPixmap = source.pPixmap ;
+        tDate = source.tDate ;
+        dLat = source.dLat ;
+        dLon = source.dLon ;
+        valid = source.valid ;
+        dirty = source.dirty ;
+        iSequence = source.iSequence ;
+        if (valid) dirty = true ;
+    }
 
 };
 
 class TrackEntry
 {
 private:
+    QString sUuid ;
     double dLat ;
     double dLon ;
     double dElev ;
     QDateTime tDate ;
-    QString sUuid ;
     int iSequence ;
     bool bValid ;
     bool bDirty ;
@@ -146,6 +160,20 @@ public:
     QDateTime date() ;
     double distanceFrom(TrackEntry& other) ;
     double distanceFrom(PoiEntry& other) ;
+
+    // Operator Assignment
+    void operator = (const TrackEntry &source ) {
+        sUuid = source.sUuid ;
+        dLat = source.dLat ;
+        dLon = source.dLon ;
+        dElev = source.dElev ;
+        tDate = source.tDate ;
+        iSequence = source.iSequence ;
+        bValid = source.bValid ;
+        bDirty = source.bDirty ;
+        if (bValid) bDirty = true ;
+    }
+
 } ;
 
 

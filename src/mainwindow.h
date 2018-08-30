@@ -154,6 +154,8 @@ private:
     bool updateListSelection(PoiCollection *collection, QListWidget *widget) ;
     bool updateSearchFilter() ;
 
+    // Update tracks.ov2
+    bool refreshTracksPoi() ;
 
     // Refresh the Map
     bool refreshMap() ;

@@ -165,55 +165,65 @@ void MainWindow::saveCollection(bool autoyes)
                 } else {
 
                     // There are tracks, so also update the "Tracks.gpx" and "Tracks.ov2" files
-
-                    // Create a New Waypoint entry, using the first waypoint, or the first track point
-                    // (pre-requisit is that the fileCollection() is already sorted)
-                    PoiEntry ent ;
-
-                    if (fileCollection.size()>0) {
-                        ent.copyFrom(fileCollection.at(0)) ;
-                    } else {
-                        ent.setLatLon(fileCollection.trackAt(0).lat(), fileCollection.at(0).lon()) ;
-                    }
-
-                    ent.setUuid(fileCollection.uuid()) ;
-
-                    QString name = fileCollection.formattedName(true, true, true, false, false, false) ;
-                    ent.set(PoiEntry::EDITEDTITLE, name) ;
-                    ent.setSequence(0) ;
-
-                    QString typetxt ;
-                    for (int i=fileCollection.rating(); i>0; i--) {
-                        typetxt = typetxt + QString("★") ;
-                    }
-                    ent.set(PoiEntry::EDITEDTYPE, typetxt) ;
-
-                    // Calculate tracks filename
-                    QFileInfo fi(fileCollection.filename()) ;
-                    QString trackfilename = configuration->poiFolder() ;
-
-                    if (!trackfilename.isEmpty()) {
-
-                        trackfilename = trackfilename +  "/" + "Tracks.gpx" ;
-                        PoiCollection tracks ;
-
-                        // Load existing data
-                        tracks.loadGpx(trackfilename) ;
-
-                        // Update the entry and save
-                        tracks.remove(ent.uuid()) ;
-                        tracks.add(ent) ;
-                        tracks.saveGpx() ;
-                        tracks.saveOv2() ;
-
-                    }
+                    refreshTracksPoi() ;
                 }
-
             }
         }
     }
 }
 
+bool MainWindow::refreshTracksPoi()
+{
+    // Calculate tracks filename
+    QFileInfo fi(fileCollection.filename()) ;
+    QString trackfilename = configuration->poiFolder() ;
+    QString trackfolder = configuration->tracksFolder() ;
+
+    if (!trackfilename.isEmpty() && !trackfolder.isEmpty()) {
+
+        trackfilename = trackfilename +  "/" + "Tracks.gpx" ;
+        PoiCollection tracks ;
+
+        // Parse all gpx files in the tracks folder
+        QDir gpxfolder(trackfolder) ;
+        QStringList gpxfiles = gpxfolder.entryList(QStringList("*.gpx")) ;
+        for (int i=0; i<gpxfiles.length(); i++) {
+
+            PoiCollection track ;
+            track.loadGpx(trackfolder + QString("/") + gpxfiles.at(i)) ;
+
+            // Create a New Waypoint entry, using the first waypoint, or the first track point
+            // (pre-requisit is that the fileCollection() is already sorted)
+            PoiEntry ent ;
+
+            if (track.size()>0) {
+                ent.copyFrom(track.at(0)) ;
+            } else {
+                ent.setLatLon(track.trackAt(0).lat(), track.trackAt(0).lon()) ;
+            }
+            ent.setUuid(track.uuid()) ;
+
+            QString name = track.formattedName(true, true, true, false, false, false) ;
+            ent.set(PoiEntry::EDITEDTITLE, name) ;
+            ent.setSequence(0) ;
+
+            QString typetxt ;
+            for (int i=track.rating(); i>0; i--) {
+                typetxt = typetxt + QString("★") ;
+            }
+            ent.set(PoiEntry::EDITEDTYPE, typetxt) ;
+
+            tracks.add(ent) ;
+
+        }
+
+        tracks.saveGpx(trackfilename) ;
+        tracks.saveOv2() ;
+    }
+
+    return true ;
+
+}
 //////////////////////////////////////////////////////////////////////////
 //
 // Refresh the screen

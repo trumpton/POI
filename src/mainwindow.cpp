@@ -264,6 +264,10 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->groupBox_Photo->setEnabled(false) ;
         ui->groupBox_Photo->setVisible(false) ;
 
+        // Track Details
+        ui->groupBox_TrackDetails->setEnabled(false) ;
+        ui->groupBox_TrackDetails->setVisible(false) ;
+
         // File Collection
         ui->btnEditFile->setEnabled(false) ;
         ui->btnCopyToClipboard->setEnabled(false) ;
@@ -299,6 +303,14 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
                 ui->btnDown->setEnabled(true) ;
                 ui->btnUp->setEnabled(true) ;
             }
+        } else if (fileCollection.findTrack(thisUuid).isValid()) {
+            TrackEntry& te = fileCollection.findTrack(thisUuid) ;
+            ui->groupBox_TrackDetails->setEnabled(true) ;
+            ui->groupBox_TrackDetails->setVisible(true) ;
+            ui->label_TrackPointDateTIme->setText(te.date().toString()) ;
+            ui->label_TrackPointLat->setText(QString::number(te.lon(),'f',8)) ;
+            ui->label_TrackPointLon->setText(QString::number(te.lat(),'f',8)) ;
+            ui->label_TrackPointAlt->setText(QString::number(te.elev(),'f',2)) ;
         }
 
         // Track Edit Buttons

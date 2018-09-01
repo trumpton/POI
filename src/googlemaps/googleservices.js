@@ -66,7 +66,7 @@ function initialise() {
     new QWebChannel(qt.webChannelTransport, function(channel) {
 
         // WebEngineView (set via channel)
-        GoogleMapsWidget = channel.objects.GoogleMapsWidget;
+        GoogleMapsWidget = channel.objects.MapsWidget;
 
         map.addListener('center_changed', function() {
             handleMapMoved(map);

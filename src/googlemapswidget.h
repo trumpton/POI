@@ -1,14 +1,16 @@
 #ifndef GOOGLEMAPSWIDGET_H
 #define GOOGLEMAPSWIDGET_H
 
-#include "WebAccess.h"
 #include "configuration.h"
+
+#include <QtWebEngineWidgets>
+#include <QtWebChannel/QtWebChannel>
 
 #include <QObject>
 #include <QString>
 
 
-class GoogleMapsWidget: public WebAccess
+class MapsWidget: public QWebEngineView
 {
     // Enable slots and signals
     Q_OBJECT
@@ -41,8 +43,8 @@ public slots:
     void proxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth, const QString &proxyHost) ;
 
 public:
-    explicit GoogleMapsWidget(QWidget *parent = 0);
-    ~GoogleMapsWidget() ;
+    explicit MapsWidget(QWidget *parent = 0);
+    ~MapsWidget() ;
 
     // Initialise key, workingcollection and load web page
     void initialise(QString apiKey, QString initialWorkingUuid, QString initialFileUuid, QString initialTrackUuid) ;
@@ -78,12 +80,7 @@ private:
     void initialiseJavascript() ;
     void runJavaScript(QString command) ;
 
-#ifdef WEBENGINE
     QWebChannel channel ;
-#else
-    QNetworkAccessManager manager ;
-#endif
-
     double dLat, dLon ;
     int iZoom ;
 };

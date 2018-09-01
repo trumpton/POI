@@ -38,9 +38,9 @@ void MainWindow::on_listFile_itemClicked(QListWidgetItem *item)
 
     PoiEntry& currentEntry = fileCollection.find(thisUuid) ;
     if (currentEntry.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-        ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
+        ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
     }
-    ui->googlemapsWebView->selectMarker(thisUuid) ;
+    ui->mapWebView->selectMarker(thisUuid) ;
     refresh(false, true, PREFZOOM) ;
 }
 
@@ -64,7 +64,7 @@ void MainWindow::on_btnCopyToClipboard_clicked()
         thisUuid = newEntry.uuid() ;
         thisCollectionUuid = workingCollection.uuid() ;
         workingCollection.add(newEntry) ;
-        ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE), newEntry.sequence());
+        ui->mapWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE), newEntry.sequence());
 
         refresh() ;
 
@@ -109,11 +109,11 @@ void MainWindow::on_listWorking_itemClicked(QListWidgetItem *item)
 
     PoiEntry& currentEntry = workingCollection.find(thisUuid) ;
     if (currentEntry.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-        ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
+        ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
     }
 
     refresh(false, true, PREFZOOM) ;
-    ui->googlemapsWebView->selectMarker(thisUuid) ;
+    ui->mapWebView->selectMarker(thisUuid) ;
 }
 
 
@@ -133,7 +133,7 @@ void MainWindow::on_btnStore_clicked()
         fileCollection.sortBySequence(); ;
 
         // Modify the google map record
-        ui->googlemapsWebView->setMarkerCollection(thisUuid, thisCollectionUuid) ;
+        ui->mapWebView->setMarkerCollection(thisUuid, thisCollectionUuid) ;
 
         // TODO: Set MarkerCollection Sequence
 
@@ -157,7 +157,7 @@ void MainWindow::on_btnDuplicate_clicked()
         thisUuid = newEntry.uuid() ;
         thisCollectionUuid = workingCollection.uuid() ;
         workingCollection.add(newEntry) ;
-        ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE), newEntry.sequence(), true);
+        ui->mapWebView->setMarker(thisUuid, thisCollectionUuid, newEntry.lat(), newEntry.lon(), newEntry.get(PoiEntry::EDITEDTITLE), newEntry.sequence(), true);
 
         refresh(true) ;
 
@@ -173,7 +173,7 @@ void MainWindow::on_btnDelete_clicked()
     if (!selection.isEmpty()) {
 
         workingCollection.remove(selection) ;
-        ui->googlemapsWebView->removeMarker(selection) ;
+        ui->mapWebView->removeMarker(selection) ;
 
         refresh(true) ;
 
@@ -183,8 +183,8 @@ void MainWindow::on_btnDelete_clicked()
 // Handle clipboard new button pressed
 void MainWindow::on_btnNew_clicked()
 {
-    double lat=ui->googlemapsWebView->getLat() ;
-    double lon=ui->googlemapsWebView->getLon() ;
+    double lat=ui->mapWebView->getLat() ;
+    double lon=ui->mapWebView->getLon() ;
     PoiEntry newEntry ;
 
     qDebug() << "" ;
@@ -198,8 +198,8 @@ void MainWindow::on_btnNew_clicked()
     thisUuid = newEntry.uuid() ;
     thisCollectionUuid = workingCollection.uuid() ;
     workingCollection.add(newEntry) ;
-    ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, "New Entry", 9999, true);
-    ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
+    ui->mapWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, "New Entry", 9999, true);
+    ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
 
     refresh(true, true, PREFZOOM) ;
 }

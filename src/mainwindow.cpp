@@ -24,6 +24,7 @@
 #include "prompt.h"
 
 #define STAR  QChar(0x2605)
+#define GOOGLEMAPS
 
 // TODO:
 //
@@ -50,21 +51,21 @@ MainWindow::MainWindow(QWidget *parent) :
     // Configure and Load Web Pages
     QString key = configuration->key() ;
     if (key.isEmpty()) key=QString(GOOGLEAPIKEY) ;
-    ui->googlemapsWebView->initialise(key, workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
+    ui->mapWebView->initialise(key, workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
 
     // TODO: Shouldn't need these
-    ui->googlemapsWebView->clearCookies() ;
+    ui->mapWebView->clearCookies() ;
 
     // Update markers when selected or moved on the map
-    connect(ui->googlemapsWebView, &GoogleMapsWidget::markerSelected, this, &MainWindow::mapCallbackMarkerSelected);
-    connect(ui->googlemapsWebView, &GoogleMapsWidget::markerMoved, this, &MainWindow::mapCallbackMarkerMoved);
+    connect(ui->mapWebView, &MapsWidget::markerSelected, this, &MainWindow::mapCallbackMarkerSelected);
+    connect(ui->mapWebView, &MapsWidget::markerMoved, this, &MainWindow::mapCallbackMarkerMoved);
 
     // Handle Geocoding Update
-    connect(ui->googlemapsWebView, &GoogleMapsWidget::markerGeocoded, this, &MainWindow::mapCallbackMarkerGeocoded);
+    connect(ui->mapWebView, &MapsWidget::markerGeocoded, this, &MainWindow::mapCallbackMarkerGeocoded);
 
     // Handle search results / failure
-    connect(ui->googlemapsWebView, &GoogleMapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
-    connect(ui->googlemapsWebView, &GoogleMapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
+    connect(ui->mapWebView, &MapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
+    connect(ui->mapWebView, &MapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
 
     // Handle Export Menu Refresh
     connect(ui->menu_Export, &QMenu::aboutToShow, this, &MainWindow::on_menuExport_aboutToShow) ;
@@ -348,8 +349,8 @@ void MainWindow::on_menuExport_aboutToShow()
 
 bool MainWindow::updateMapSelection(int zoom)
 {
-    ui->googlemapsWebView->selectMarker(thisUuid) ;
-    if (!thisUuid.isEmpty()) ui->googlemapsWebView->seekToMarker(thisUuid, zoom) ;
+    ui->mapWebView->selectMarker(thisUuid) ;
+    if (!thisUuid.isEmpty()) ui->mapWebView->seekToMarker(thisUuid, zoom) ;
     return true ;
 }
 
@@ -557,10 +558,10 @@ bool MainWindow::refreshMap()
     }
     ui->label_duration->setText(time) ;
 
-    ui->googlemapsWebView->removeAllMarkers() ;
+    ui->mapWebView->removeAllMarkers() ;
     for (int i=0, ni=workingCollection.size(); i<ni; i++) {
         PoiEntry& ent = workingCollection.at(i) ;
-        ui->googlemapsWebView->setMarker(ent.uuid(),
+        ui->mapWebView->setMarker(ent.uuid(),
           workingCollection.uuid(),
           ent.lat(),
           ent.lon(),
@@ -569,7 +570,7 @@ bool MainWindow::refreshMap()
     }
     for (int i=0, ni=fileCollection.size(); i<ni; i++) {
         PoiEntry& ent = fileCollection.at(i) ;
-        ui->googlemapsWebView->setMarker(ent.uuid(),
+        ui->mapWebView->setMarker(ent.uuid(),
           fileCollection.uuid(),
           ent.lat(),
           ent.lon(),
@@ -578,15 +579,15 @@ bool MainWindow::refreshMap()
     }
     for (int i=0, ni=fileCollection.trackSize(); i<ni; i++) {
         TrackEntry& ent = fileCollection.trackAt(i) ;
-        ui->googlemapsWebView->setMarker(ent.uuid(),
+        ui->mapWebView->setMarker(ent.uuid(),
           fileCollection.trackUuid(),
           ent.lat(),
           ent.lon(),
           QString(""),
           ent.sequence()) ;
     }
-    ui->googlemapsWebView->showTracks(ui->action_ShowTrack->isChecked());
-    ui->googlemapsWebView->selectMarker(thisUuid);
+    ui->mapWebView->showTracks(ui->action_ShowTrack->isChecked());
+    ui->mapWebView->selectMarker(thisUuid);
     return true ;
 }
 

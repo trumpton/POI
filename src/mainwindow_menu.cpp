@@ -26,7 +26,7 @@ void MainWindow::on_action_New_triggered()
     ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
 
     // Register new UUIDs
-    ui->googlemapsWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
+    ui->mapWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
     refresh(true) ;
 }
 
@@ -62,13 +62,13 @@ void MainWindow::on_action_Exit_triggered()
 
 void MainWindow::on_actionRefresh_Google_Map_triggered()
 {
-    ui->googlemapsWebView->reload() ;
+    ui->mapWebView->reload() ;
 }
 
 
 void MainWindow::on_actionClear_Cookies_triggered()
 {
-    ui->googlemapsWebView->clearCookies() ;
+    ui->mapWebView->clearCookies() ;
 }
 
 
@@ -90,7 +90,7 @@ void MainWindow::on_actionAuto_Geocode_triggered()
             if (retries==1) geocodecount++ ;
             QString uuid = fileCollection.at(i).uuid() ;
             QString collectionUuid = fileCollection.uuid() ;
-            ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true) ;
+            ui->mapWebView->geocodeMarker(uuid, collectionUuid, true) ;
             for (int j=0; j<(13+retries*2); j++) {
                 QThread::msleep(50) ;
                 QApplication::processEvents() ;
@@ -224,8 +224,8 @@ void MainWindow::on_action_Photo_triggered()
 
             // If lat/lon still not set, place it in screen centre
             if (lat==0.0 && lon==0.0) {
-                lat = ui->googlemapsWebView->getLat() ;
-                lon = ui->googlemapsWebView->getLon() ;
+                lat = ui->mapWebView->getLat() ;
+                lon = ui->mapWebView->getLon() ;
             }
 
             ent.setLatLon(lat, lon) ;
@@ -396,7 +396,7 @@ void MainWindow::on_action_Open_triggered()
         }
     }
     // Register New Collection UUIDs
-    ui->googlemapsWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
+    ui->mapWebView->registerUuids(workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
     refresh(true) ;
 }
 
@@ -540,7 +540,7 @@ void MainWindow::on_action_FindLocation_triggered()
 {
     bool ok;
     searchtext = QInputDialog::getText(0, "POI","Search For", QLineEdit::Normal,"", &ok);
-    if (!searchtext.isEmpty()) ui->googlemapsWebView->searchLocation(searchtext) ;
+    if (!searchtext.isEmpty()) ui->mapWebView->searchLocation(searchtext) ;
 }
 
 

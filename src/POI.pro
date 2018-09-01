@@ -37,7 +37,6 @@ HEADERS  += mainwindow.h \
     googlemapswidget.h \
     poicollection.h \
     configuration.h \
-    WebAccess.h \
     cookies.h \
     apikeys.h \
     urls.h \
@@ -56,4 +55,3 @@ RESOURCES += \
 
 OTHER_FILES +=
 
-DISTFILES +=

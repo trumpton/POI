@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1209</width>
-    <height>685</height>
+    <height>695</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -226,7 +226,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="GoogleMapsWidget" name="googlemapsWebView" native="true">
+         <widget class="MapsWidget" name="mapWebView" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -1920,13 +1920,8 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>WebAccess</class>
+   <class>MapsWidget</class>
    <extends>QWidget</extends>
-   <header>WebAccess.h</header>
-  </customwidget>
-  <customwidget>
-   <class>GoogleMapsWidget</class>
-   <extends>WebAccess</extends>
    <header>googlemapswidget.h</header>
    <container>1</container>
   </customwidget>

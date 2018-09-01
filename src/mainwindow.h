@@ -1,13 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "googlemapswidget.h"
 #include "poicollection.h"
 #include "configuration.h"
 
 #include <QMainWindow>
 #include <QListWidget>
 #include <QPixmap>
+#include <QLabel>
+
 #include "undo.h"
 
 #define PREFZOOM 17
@@ -103,22 +104,13 @@ private slots:
     void on_lineEdit_Phone1_editingFinished();
     void on_lineEdit_Phone2_editingFinished();
     void on_lineEdit_Door_returnPressed();
-
-
     void on_lineEdit_fileTitle_editingFinished();
-
     void on_action_ShowActualDuration_triggered();
-
     void on_comboBox_Rating_currentIndexChanged(int index);
-
     void on_actionTransfer_to_Garmin_triggered();
-
     void on_actionTransfer_from_Garmin_triggered();
-
     void on_action_Photo_triggered();
-
     void on_actionResort_Waypoints_By_Date_triggered();
-
     void on_actionUndo_triggered();
 
 private:

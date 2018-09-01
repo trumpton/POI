@@ -36,8 +36,8 @@ void MainWindow::mapCallbackSearchResultsReady(double lat, double lon, QString f
     thisUuid = newEntry.uuid() ;
     thisCollectionUuid = workingCollection.uuid() ;
     workingCollection.add(newEntry) ;
-    ui->googlemapsWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, formattedAddress, 9999, true);
-    ui->googlemapsWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
+    ui->mapWebView->setMarker(thisUuid, thisCollectionUuid, lat, lon, formattedAddress, 9999, true);
+    ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
 
     refresh(false, true, PREFZOOM) ;
 
@@ -52,7 +52,7 @@ void MainWindow::mapCallbackSearchFailed(QString error)
     qDebug() << "MainWindow::" << str ;
 
     QMessageBox::warning(this, tr("Search Error"), error) ;
-    ui->googlemapsWebView->removeAllMarkers() ;
+    ui->mapWebView->removeAllMarkers() ;
     thisUuid = "" ;
     thisCollectionUuid = "" ;
     refresh() ;
@@ -71,7 +71,7 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
         undo.pushPoiEntry(pe) ;
         pe.setLatLon(lat, lon) ;
         pe.set(PoiEntry::GEOCODED, "no") ;
-        ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true);
+        ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
         refresh(true) ;
     }
 
@@ -92,7 +92,7 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
                 }
             }
             if (smallestdistance<100) {
-                ui->googlemapsWebView->setMarker(uuid, collectionUuid, lat, lon, QString(""), te.sequence()) ;
+                ui->mapWebView->setMarker(uuid, collectionUuid, lat, lon, QString(""), te.sequence()) ;
                 te.setLatLon(lat, lon) ;
             }
         }
@@ -134,7 +134,7 @@ void MainWindow::mapCallbackMarkerSelected(QString uuid, QString collectionUuid)
         thisUuid = uuid ;
         thisCollectionUuid = collectionUuid ;
         if (pe.get(PoiEntry::GEOCODED).compare("yes")!=0) {
-            ui->googlemapsWebView->geocodeMarker(uuid, collectionUuid, true);
+            ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
         }
         // Refresh but don't update markers.  Centre on selected item.  Don't zoom.
         refresh(false, true) ;

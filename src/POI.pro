@@ -51,7 +51,8 @@ FORMS    += mainwindow.ui \
 
 RESOURCES += \
     googlemaps.qrc \
-    icons.qrc
+    icons.qrc \
+    mapicons.qrc
 
 OTHER_FILES +=
 

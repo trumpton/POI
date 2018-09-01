@@ -2,22 +2,5 @@
     <qresource prefix="/googlemaps">
         <file alias="google_maps.html">googlemaps/google_maps.html</file>
         <file alias="googleservices.js">googlemaps/googleservices.js</file>
-        <file alias="marker-blue-icon.png">googlemaps/marker-blue-icon.png</file>
-        <file alias="marker-green.png">googlemaps/marker-green.png</file>
-        <file alias="marker-green-dot.png">googlemaps/marker-green-dot.png</file>
-        <file alias="marker-red.png">googlemaps/marker-red.png</file>
-        <file alias="marker-red-dot.png">googlemaps/marker-red-dot.png</file>
-        <file alias="marker-blue.png">googlemaps/marker-blue.png</file>
-        <file alias="marker-blue-dot.png">googlemaps/marker-blue-dot.png</file>
-        <file>googlemaps/trackmarker-blue.png</file>
-        <file>googlemaps/trackmarker-blue-dot.png</file>
-        <file>googlemaps/trackmarker-purple.png</file>
-        <file>googlemaps/trackmarker-purple-dot.png</file>
-    </qresource>
-    <qresource prefix="/">
-        <file>googlemaps/trackmarker-blue.png</file>
-        <file>googlemaps/trackmarker-blue-dot.png</file>
-        <file>googlemaps/trackmarker-purple.png</file>
-        <file>googlemaps/trackmarker-purple-dot.png</file>
     </qresource>
 </RCC>

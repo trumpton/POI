@@ -16,12 +16,12 @@ var initialLon = 11.57;
 var initialZoom = 3;
 
 // https://sites.google.com/site/gmapsdevelopment/
-var iconworking = { url: "qrc:///googlemaps/marker-red.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
-var iconworkingselected = { url: "qrc:///googlemaps/marker-red-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
-var iconfile = { url: "qrc:///googlemaps/marker-green.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
-var iconfileselected = { url: "qrc:///googlemaps/marker-green-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
-var icontrack = { url: "qrc:///googlemaps/trackmarker-blue.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
-var icontrackselected = { url: "qrc:///googlemaps/trackmarker-blue-dot.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
+var iconworking = { url: "qrc:///mapicons/marker-red.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconworkingselected = { url: "qrc:///mapicons/marker-red-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconfile = { url: "qrc:///mapicons/marker-green.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var iconfileselected = { url: "qrc:///mapicons/marker-green-dot.png", size: new google.maps.Size(29, 48), anchor: new google.maps.Point(15, 48) };
+var icontrack = { url: "qrc:///mapicons/trackmarker-blue.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
+var icontrackselected = { url: "qrc:///mapicons/trackmarker-blue-dot.png", size: new google.maps.Size(32, 32), anchor: new google.maps.Point(16, 16) };
 
 // zindex
 var zIndexSelectedMarker = 30;

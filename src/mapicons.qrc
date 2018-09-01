@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/mapicons">
+        <file alias="marker-blue-icon.png">mapicons/marker-blue-icon.png</file>
+        <file alias="marker-green.png">mapicons/marker-green.png</file>
+        <file alias="marker-green-dot.png">mapicons/marker-green-dot.png</file>
+        <file alias="marker-red.png">mapicons/marker-red.png</file>
+        <file alias="marker-red-dot.png">mapicons/marker-red-dot.png</file>
+        <file alias="marker-blue.png">mapicons/marker-blue.png</file>
+        <file alias="marker-blue-dot.png">mapicons/marker-blue-dot.png</file>
+        <file alias="trackmarker-blue.png">mapicons/trackmarker-blue.png</file>
+        <file alias="trackmarker-blue-dot.png">mapicons/trackmarker-blue-dot.png</file>
+        <file alias="trackmarker-purple.png">mapicons/trackmarker-purple.png</file>
+        <file alias="trackmarker-purple-dot.png">mapicons/trackmarker-purple-dot.png</file>
+    </qresource>
+</RCC>

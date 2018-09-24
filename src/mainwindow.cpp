@@ -49,9 +49,16 @@ MainWindow::MainWindow(QWidget *parent) :
     configuration = new Configuration(this) ;
 
     // Configure and Load Web Pages
-    QString key = configuration->key() ;
-    if (key.isEmpty()) key=QString(GOOGLEAPIKEY) ;
-    ui->mapWebView->initialise(key, workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
+    ui->mapWebView->initialise(QString("qrc:///openlayers/openlayers.html"),
+                               configuration->bingKey(),
+                               configuration->geocodeType(),
+                               configuration->hereId(), configuration->hereCode(),
+                               configuration->aerialTileZoom(), configuration->aerialTileUrl(),
+                               configuration->satelliteOverlayZoom(), configuration->satelliteOverlayUrl(),
+                               configuration->mapTileZoom(), configuration->mapTileUrl(),
+                               configuration->contourTileZoom(), configuration->contourTileUrl(),
+                               configuration->trailTileZoom(), configuration->trailTileUrl(),
+                               workingCollection.uuid(), fileCollection.uuid(), fileCollection.trackUuid()) ;
 
     // TODO: Shouldn't need these
     ui->mapWebView->clearCookies() ;
@@ -59,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // Update markers when selected or moved on the map
     connect(ui->mapWebView, &MapsWidget::markerSelected, this, &MainWindow::mapCallbackMarkerSelected);
     connect(ui->mapWebView, &MapsWidget::markerMoved, this, &MainWindow::mapCallbackMarkerMoved);
+
+    // Map Moved
+    connect(ui->mapWebView, &MapsWidget::mapMoved, this, &MainWindow::mapCallbackMapMoved);
 
     // Handle Geocoding Update
     connect(ui->mapWebView, &MapsWidget::markerGeocoded, this, &MainWindow::mapCallbackMarkerGeocoded);
@@ -69,6 +79,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Handle Export Menu Refresh
     connect(ui->menu_Export, &QMenu::aboutToShow, this, &MainWindow::on_menuExport_aboutToShow) ;
+
+    on_action_ShowStandard_triggered() ;
+    ui->action_ShowTrack->setChecked(false) ;
+    ui->action_ShowActualDuration->setChecked(false) ;
 
     refresh() ;
 }
@@ -586,7 +600,6 @@ bool MainWindow::refreshMap()
           QString(""),
           ent.sequence()) ;
     }
-    ui->mapWebView->showTracks(ui->action_ShowTrack->isChecked());
     ui->mapWebView->selectMarker(thisUuid);
     return true ;
 }
@@ -608,4 +621,5 @@ void MainWindow::on_comboBox_Rating_currentIndexChanged(int index)
 {
     fileCollection.setRating(index) ;
 }
+
 

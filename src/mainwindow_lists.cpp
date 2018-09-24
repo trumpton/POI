@@ -40,8 +40,20 @@ void MainWindow::on_listFile_itemClicked(QListWidgetItem *item)
     if (currentEntry.get(PoiEntry::GEOCODED).compare("yes")!=0) {
         ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
     }
+
     ui->mapWebView->selectMarker(thisUuid) ;
-    refresh(false, true, PREFZOOM) ;
+
+    int zoom = ui->mapWebView->getZoom() ;
+
+    if (ui->mapWebView->isVisible(currentEntry.lat(), currentEntry.lon()) && zoom>=PREFZOOM-3) {
+        // Refresh, don't update markers, don't centre
+        refresh(false, false) ;
+    } else {
+        // Refresh but don't update markers.  Centre on selected item & zoom if necessary
+        if (zoom < PREFZOOM-3) zoom = PREFZOOM ;
+        refresh(false, true, zoom) ;
+    }
+
 }
 
 
@@ -112,8 +124,19 @@ void MainWindow::on_listWorking_itemClicked(QListWidgetItem *item)
         ui->mapWebView->geocodeMarker(thisUuid, thisCollectionUuid, true);
     }
 
-    refresh(false, true, PREFZOOM) ;
     ui->mapWebView->selectMarker(thisUuid) ;
+
+    int zoom = ui->mapWebView->getZoom() ;
+
+    if (ui->mapWebView->isVisible(currentEntry.lat(), currentEntry.lon()) && zoom>=PREFZOOM-3) {
+        // Refresh, don't update markers, don't centre
+        refresh(false, false) ;
+    } else {
+        // Refresh but don't update markers.  Centre on selected item & zoom if necessary
+        if (zoom < PREFZOOM-3) zoom = PREFZOOM ;
+        refresh(false, true, zoom) ;
+    }
+
 }
 
 

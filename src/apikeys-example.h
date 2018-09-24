@@ -1,14 +1,14 @@
 #ifndef APIKEYS_H
 #define APIKEYS_H
 
-//
-// apikey.h
-//
 // Visit: https://console.developers.google.com/apis/dashboard
-//
-// And create a project, and an API Key for both Geocoding and Maps Javascript
-//
+#define GOOGLEKEY "google"
 
-#define GOOGLEAPIKEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+// Visit: https://msdn.microsoft.com/en-us/library/ff428642.aspx
+#define BINGKEY "bing"
+
+// Visit: https://developer.here.com/
+#define HEREID "here-id"
+#define HERECODE "here-code"
 
 #endif // APIKEYS_H

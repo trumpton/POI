@@ -3,6 +3,8 @@
 
 #include <QFileDialog>
 #include <QDir>
+#include "apikeys.h"
+
 
 Configuration::Configuration(QWidget *parent) :
     QDialog(parent),
@@ -10,6 +12,15 @@ Configuration::Configuration(QWidget *parent) :
 {
     ui->setupUi(this);
     settings = new QSettings("trumpton.uk", "Poi");
+#ifdef _WINDOWS_
+    QString inifilename = qApp->applicationFilePath().replace(".EXE",".ini").replace(".exe",".ini") ;
+#else
+    QString inifilename = qApp->applicationFilePath() + QString(".ini") ;
+#endif
+    filesettings = new QSettings(inifilename, QSettings::IniFormat) ;
+
+    QString bing = filesettings->value("keys/bing", "Unknown").toString();
+
     QDir::setCurrent(poiFolder()) ;
 }
 
@@ -17,12 +28,6 @@ Configuration::~Configuration()
 {
     delete settings ;
     delete ui ;
-}
-
-QString& Configuration::key()
-{
-    sKey = settings->value("key").toString() ;
-    return sKey ;
 }
 
 QString& Configuration::poiFolder()
@@ -82,7 +87,6 @@ void Configuration::setOpenFolder(QString folder)
 
 int Configuration::exec()
 {
-    ui->confKey->setText(key()) ;
     ui->confPoiFolder->setText(poiFolder()) ;
     ui->confTracksFolder->setText(tracksFolder());
     ui->confImportFolder->setText(importFolder()) ;
@@ -96,7 +100,6 @@ int Configuration::exec()
 
     int i=QDialog::exec() ;
     if (i==QDialog::Accepted) {
-        settings->setValue("key", ui->confKey->text()) ;
         settings->setValue("folder", ui->confPoiFolder->text()) ;
         settings->setValue("garmin", ui->confGarminFolder->text()) ;
         settings->setValue("tracks", ui->confTracksFolder->text()) ;
@@ -109,6 +112,97 @@ int Configuration::exec()
     }
     return i ;
 }
+
+//
+//
+//
+
+int Configuration::aerialTileZoom()
+{
+    return filesettings->value("satellite/zoom",ZOOM_AERIAL).toInt() ;
+}
+
+int Configuration::satelliteOverlayZoom()
+{
+    return filesettings->value("satelliteoverlay/zoom",ZOOM_OVERLAY).toInt() ;
+}
+
+int Configuration::mapTileZoom()
+{
+    return filesettings->value("map/zoom",ZOOM_MAP).toInt() ;
+}
+
+int Configuration::contourTileZoom()
+{
+    return filesettings->value("contour/zoom",ZOOM_CONTOUR).toInt() ;
+}
+
+int Configuration::trailTileZoom()
+{
+    return filesettings->value("trail/zoom",ZOOM_TRAIL).toInt() ;
+}
+
+
+QString Configuration::aerialTileUrl()
+{
+    return filesettings->value("satellite/url",
+        QString(TILE_AERIAL)).toString() ;
+}
+
+QString Configuration::satelliteOverlayUrl()
+{
+    return filesettings->value("satelliteoverlay/url",
+        QString(TILE_OVERLAY)).toString() ;
+}
+
+QString Configuration::geocodeType()
+{
+    return filesettings->value("geocode/type",
+        QString("OSM")).toString().toLower() ;
+}
+
+QString Configuration::bingKey()
+{
+    return filesettings->value("keys/bing",
+        QString(BINGKEY)).toString() ;
+}
+
+QString Configuration::googleKey()
+{
+    return filesettings->value("keys/google",
+        QString(GOOGLEKEY)).toString();
+}
+
+QString Configuration::hereId()
+{
+    return filesettings->value("keys/hereid",
+        QString(HEREID)).toString() ;
+}
+
+QString Configuration::hereCode()
+{
+    return filesettings->value("keys/herecode",
+        QString(HERECODE)).toString() ;
+}
+
+QString Configuration::mapTileUrl()
+{
+    return filesettings->value("map/url",
+        QString(TILE_MAP)).toString() ;
+}
+
+QString Configuration::contourTileUrl()
+{
+    return filesettings->value("contour/url",
+        QString(TILE_CONTOUR)).toString() ;
+}
+
+QString Configuration::trailTileUrl()
+{
+    return filesettings->value("trail/url",
+       QString(TILE_TRAIL)).toString() ;
+}
+
 
 //
 // Form Controls

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/openlayers">
+        <file alias="ol.css">openlayers/ol.css</file>
+        <file alias="ol.js">openlayers/ol.js</file>
+        <file alias="openlayers.html">openlayers/openlayers.html</file>
+        <file alias="olservices.js">openlayers/olservices.js</file>
+        <file alias="geocode.js">openlayers/geocode.js</file>
+    </qresource>
+</RCC>

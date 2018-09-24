@@ -33,6 +33,9 @@ private slots:
     void mapCallbackMarkerSelected(QString uuid, QString collectionUuid) ;
     void mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode) ;
 
+    // Called when the map has been moved
+    void mapCallbackMapMoved(double lat, double lon, int zoom) ;
+
     // Called when search completes / fails
     void mapCallbackSearchResultsReady(double lat, double lon, QString formattedAddress, QString phoneNumber) ;
     void mapCallbackSearchFailed(QString error) ;
@@ -45,12 +48,8 @@ private slots:
     void on_action_Setup_triggered();
     void on_action_Exit_triggered();
     void on_actionClear_Cookies_triggered();
-    void on_actionRefresh_Google_Map_triggered();
-
-    void on_menuExport_aboutToShow() ;
 
     // Edit
-    void on_action_ShowTrack_toggled(bool arg1);
     void on_action_CreateTrackFromWaypoints_triggered();
     void on_action_ReduceTrackPoints_triggered();
 
@@ -65,6 +64,7 @@ private slots:
 
     // Export
     void on_action_LaunchTomTom_triggered();
+    void on_menuExport_aboutToShow() ;
 
     // Search
     void on_action_FindLocation_triggered();
@@ -105,13 +105,23 @@ private slots:
     void on_lineEdit_Phone2_editingFinished();
     void on_lineEdit_Door_returnPressed();
     void on_lineEdit_fileTitle_editingFinished();
-    void on_action_ShowActualDuration_triggered();
     void on_comboBox_Rating_currentIndexChanged(int index);
     void on_actionTransfer_to_Garmin_triggered();
     void on_actionTransfer_from_Garmin_triggered();
     void on_action_Photo_triggered();
     void on_actionResort_Waypoints_By_Date_triggered();
     void on_actionUndo_triggered();
+
+    void on_action_ShowStandard_triggered();
+    void on_action_ShowAerial_triggered();
+    void on_action_ShowContour_triggered();
+
+    void on_action_ShowTrack_toggled(bool checked);
+    void on_action_ShowActualDuration_toggled(bool checked);
+
+    void on_action_ShowTrailsOverlay_toggled(bool arg1);
+
+    void on_action_ShowSatelliteOverlay_toggled(bool arg1);
 
 private:
 

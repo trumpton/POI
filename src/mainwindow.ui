@@ -32,7 +32,7 @@
    <string>POI Manager</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="googlemaps.qrc">
+   <iconset>
     <normaloff>:/googlemaps/marker-blue.png</normaloff>:/googlemaps/marker-blue.png</iconset>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
@@ -209,6 +209,36 @@
          </property>
          <property name="text">
           <string>0m / 0m</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_10">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Minimum</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>Zoom:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_zoom">
+         <property name="text">
+          <string>3</string>
          </property>
         </widget>
        </item>
@@ -1666,7 +1696,6 @@
     <addaction name="action_Save"/>
     <addaction name="action_SaveAs"/>
     <addaction name="separator"/>
-    <addaction name="actionRefresh_Google_Map"/>
     <addaction name="separator"/>
     <addaction name="action_Setup"/>
     <addaction name="actionClear_Cookies"/>
@@ -1716,8 +1745,6 @@
     <property name="title">
      <string>Trac&amp;k</string>
     </property>
-    <addaction name="action_ShowTrack"/>
-    <addaction name="action_ShowActualDuration"/>
     <addaction name="actionResort_Waypoints_By_Date"/>
     <addaction name="action_CreateTrackFromWaypoints"/>
     <addaction name="actionSnap"/>
@@ -1729,12 +1756,27 @@
     </property>
     <addaction name="action_FindLocation"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="action_ShowStandard"/>
+    <addaction name="action_ShowAerial"/>
+    <addaction name="action_ShowContour"/>
+    <addaction name="separator"/>
+    <addaction name="action_ShowSatelliteOverlay"/>
+    <addaction name="action_ShowTrailsOverlay"/>
+    <addaction name="separator"/>
+    <addaction name="action_ShowTrack"/>
+    <addaction name="action_ShowActualDuration"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Track"/>
    <addaction name="menu_Import"/>
    <addaction name="menu_Export"/>
    <addaction name="menu_Search"/>
+   <addaction name="menuView"/>
    <addaction name="menu_About"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -1833,14 +1875,6 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="action_ShowTrack">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show &amp;Track</string>
-   </property>
-  </action>
   <action name="action_CreateTrackFromWaypoints">
    <property name="text">
     <string>&amp;Create Track From Waypoints</string>
@@ -1880,14 +1914,6 @@
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="action_ShowActualDuration">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show &amp;Actual Duration</string>
-   </property>
-  </action>
   <action name="actionTransfer_to_Garmin">
    <property name="text">
     <string>&amp;Save Tracks to Garmin</string>
@@ -1916,13 +1942,82 @@
     <string>Ctrl+Z</string>
    </property>
   </action>
+  <action name="actionInitialise_Map">
+   <property name="text">
+    <string>&amp;Initialise Map</string>
+   </property>
+  </action>
+  <action name="actionTEST">
+   <property name="text">
+    <string>TEST</string>
+   </property>
+  </action>
+  <action name="action_ShowAerial">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Aerial Map</string>
+   </property>
+  </action>
+  <action name="action_ShowTrack">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Track</string>
+   </property>
+  </action>
+  <action name="action_ShowActualDuration">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Actual &amp;Duration</string>
+   </property>
+  </action>
+  <action name="action_ShowStandard">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Standard &amp;Map</string>
+   </property>
+  </action>
+  <action name="action_ShowContour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Contour Map</string>
+   </property>
+  </action>
+  <action name="action_ShowSatelliteOverlay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Satellite Overlay</string>
+   </property>
+  </action>
+  <action name="action_ShowTrailsOverlay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Trails Overlay</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
    <class>MapsWidget</class>
    <extends>QWidget</extends>
-   <header>googlemapswidget.h</header>
+   <header>mapswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -1930,7 +2025,6 @@
   <tabstop>btnDelete</tabstop>
  </tabstops>
  <resources>
-  <include location="googlemaps.qrc"/>
   <include location="icons.qrc"/>
  </resources>
  <connections/>

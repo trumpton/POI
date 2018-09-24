@@ -1220,8 +1220,6 @@ bool PoiCollection::calculateTrack()
             if (thisheight <= 0) thisheight = lastheight ;
             double heightdelta = thisheight - lastheight ;
 
-            qDebug() << "HT, " << lastheight << ",  " << thisheight << ",  " << heightdelta ;
-
             if (heightdelta>0) dheightgain += heightdelta ;
             else dheightloss -= heightdelta ;
             dtracklength += distance ;

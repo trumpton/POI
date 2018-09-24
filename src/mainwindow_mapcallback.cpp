@@ -71,8 +71,8 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
         undo.pushPoiEntry(pe) ;
         pe.setLatLon(lat, lon) ;
         pe.set(PoiEntry::GEOCODED, "no") ;
-        ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
         refresh(true) ;
+        ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
     }
 
     TrackEntry &te = findTrackEntryByUuid(uuid, collectionUuid) ;
@@ -133,11 +133,15 @@ void MainWindow::mapCallbackMarkerSelected(QString uuid, QString collectionUuid)
     if (pe.isValid()) {
         thisUuid = uuid ;
         thisCollectionUuid = collectionUuid ;
+
+        ui->mapWebView->selectMarker(thisUuid) ;
+        // Refresh, don't update markers, don't centre, don't zoom
+        refresh() ;
+
         if (pe.get(PoiEntry::GEOCODED).compare("yes")!=0) {
             ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
         }
-        // Refresh but don't update markers.  Centre on selected item.  Don't zoom.
-        refresh(false, true) ;
+
     }
 
     TrackEntry& te = findTrackEntryByUuid(uuid, collectionUuid) ;
@@ -150,3 +154,11 @@ void MainWindow::mapCallbackMarkerSelected(QString uuid, QString collectionUuid)
 
 }
 
+
+//
+// callback - map has moved
+//
+void MainWindow::mapCallbackMapMoved(double lat, double lon, int zoom)
+{
+    ui->label_zoom->setText(QString::number(zoom)) ;
+}

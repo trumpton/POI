@@ -21,6 +21,10 @@ void MainWindow::on_action_New_triggered()
 {
     saveCollection(false) ;
     fileCollection.clear() ;
+
+    on_action_ShowStandard_triggered() ;
+    ui->action_ShowTrailsOverlay->setChecked(false);
+    ui->action_ShowSatelliteOverlay->setChecked(false);
     ui->action_ShowTrack->setChecked(false) ;
     ui->action_ShowActualDuration->setChecked(false) ;
     ui->lineEdit_fileTitle->setText(fileCollection.name()) ;
@@ -60,18 +64,10 @@ void MainWindow::on_action_Exit_triggered()
 }
 
 
-void MainWindow::on_actionRefresh_Google_Map_triggered()
-{
-    ui->mapWebView->reload() ;
-}
-
-
 void MainWindow::on_actionClear_Cookies_triggered()
 {
     ui->mapWebView->clearCookies() ;
 }
-
-
 
 
 void MainWindow::on_actionAuto_Geocode_triggered()
@@ -365,9 +361,7 @@ void MainWindow::on_action_Open_triggered()
     QString folder = configuration->openFolder() ;
     QString filename = QFileDialog::getOpenFileName(this, QString("Load File"), folder, QString("GPX Files (*.gpx)")) ;
 
-    saveCollection() ;
-    fileCollection.clear() ;
-    ui->action_ShowActualDuration->setChecked(false) ;
+    on_action_New_triggered();
 
     if (!filename.isEmpty()) {
         if (!fileCollection.loadGpx(filename)) {
@@ -427,14 +421,6 @@ void MainWindow::on_btnDown_clicked()
         fileCollection.sortBySequence(); ;
         refresh(true) ;
     }
-}
-
-// Track Management
-
-
-void MainWindow::on_action_ShowTrack_toggled(bool arg1)
-{
-    refresh(true) ;
 }
 
 
@@ -555,14 +541,6 @@ void MainWindow::on_action_About_POI_triggered()
     QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
 }
 
-
-
-
-
-void MainWindow::on_action_ShowActualDuration_triggered()
-{
-    refresh(true) ;
-}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -701,4 +679,77 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
         QMessageBox::information(this, QString("POI"), QString("Transfer Complete."), QMessageBox::Ok) ;
     }
 
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// View Management
+//
+
+void MainWindow::on_action_ShowStandard_triggered()
+{
+    ui->action_ShowStandard->setChecked(true) ;
+    ui->action_ShowAerial->setChecked(false) ;
+    ui->action_ShowContour->setChecked(false) ;
+    ui->mapWebView->showMaps(ui->action_ShowStandard->isChecked(),
+                             ui->action_ShowAerial->isChecked(),
+                             ui->action_ShowContour->isChecked(),
+                             ui->action_ShowTrailsOverlay->isChecked(),
+                             ui->action_ShowSatelliteOverlay->isChecked()) ;
+}
+
+void MainWindow::on_action_ShowAerial_triggered()
+{
+    ui->action_ShowStandard->setChecked(false) ;
+    ui->action_ShowAerial->setChecked(true) ;
+    ui->action_ShowContour->setChecked(false) ;
+    ui->mapWebView->showMaps(ui->action_ShowStandard->isChecked(),
+                             ui->action_ShowAerial->isChecked(),
+                             ui->action_ShowContour->isChecked(),
+                             ui->action_ShowTrailsOverlay->isChecked(),
+                             ui->action_ShowSatelliteOverlay->isChecked()) ;
+}
+
+void MainWindow::on_action_ShowContour_triggered()
+{
+    ui->action_ShowStandard->setChecked(false) ;
+    ui->action_ShowAerial->setChecked(false) ;
+    ui->action_ShowContour->setChecked(true) ;
+    ui->mapWebView->showMaps(ui->action_ShowStandard->isChecked(),
+                             ui->action_ShowAerial->isChecked(),
+                             ui->action_ShowContour->isChecked(),
+                             ui->action_ShowTrailsOverlay->isChecked(),
+                             ui->action_ShowSatelliteOverlay->isChecked()) ;
+}
+
+void MainWindow::on_action_ShowTrailsOverlay_toggled(bool arg1)
+{
+    Q_UNUSED(arg1) ;
+    ui->mapWebView->showMaps(ui->action_ShowStandard->isChecked(),
+                             ui->action_ShowAerial->isChecked(),
+                             ui->action_ShowContour->isChecked(),
+                             ui->action_ShowTrailsOverlay->isChecked(),
+                             ui->action_ShowSatelliteOverlay->isChecked()) ;
+}
+
+void MainWindow::on_action_ShowSatelliteOverlay_toggled(bool arg1)
+{
+    Q_UNUSED(arg1) ;
+    ui->mapWebView->showMaps(ui->action_ShowStandard->isChecked(),
+                             ui->action_ShowAerial->isChecked(),
+                             ui->action_ShowContour->isChecked(),
+                             ui->action_ShowTrailsOverlay->isChecked(),
+                             ui->action_ShowSatelliteOverlay->isChecked()) ;
+}
+
+
+void MainWindow::on_action_ShowTrack_toggled(bool checked)
+{
+    ui->mapWebView->showTracks(checked);
+}
+
+void MainWindow::on_action_ShowActualDuration_toggled(bool checked)
+{
+    refresh(true) ;
 }

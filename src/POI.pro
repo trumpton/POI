@@ -21,7 +21,6 @@ DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    googlemapswidget.cpp \
     poicollection.cpp \
     configuration.cpp \
     cookies.cpp \
@@ -31,10 +30,10 @@ SOURCES += main.cpp\
     mainwindow_editdetails.cpp \
     mainwindow_lists.cpp \
     easyexif/exif.cpp \
-    undo.cpp
+    undo.cpp \
+    mapswidget.cpp
 
 HEADERS  += mainwindow.h \
-    googlemapswidget.h \
     poicollection.h \
     configuration.h \
     cookies.h \
@@ -43,16 +42,17 @@ HEADERS  += mainwindow.h \
     prompt.h \
     version.h \
     easyexif/exif.h \
-    undo.h
+    undo.h \
+    mapswidget.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \
     prompt.ui
 
 RESOURCES += \
-    googlemaps.qrc \
     icons.qrc \
-    mapicons.qrc
+    mapicons.qrc \
+    openlayers.qrc
 
 OTHER_FILES +=
 

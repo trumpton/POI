@@ -623,3 +623,8 @@ void MainWindow::on_comboBox_Rating_currentIndexChanged(int index)
 }
 
 
+
+void MainWindow::on_action_ShowTrack_triggered()
+{
+    refresh(false) ;
+}

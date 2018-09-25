@@ -123,6 +123,8 @@ private slots:
 
     void on_action_ShowSatelliteOverlay_toggled(bool arg1);
 
+    void on_action_ShowTrack_triggered();
+
 private:
 
     // Update the lists and entry form

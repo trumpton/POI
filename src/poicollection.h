@@ -101,7 +101,7 @@ public:
     QPixmap& pixmap() ;
 
     // Date
-    void setDate(QString date) ;
+    void setDate(QString date, int timezoneoffset=0) ;
     QDateTime date() ;
 
     // Route Information
@@ -241,6 +241,7 @@ public:
     PoiEntry& findPrev(QString uuid) ;
     PoiEntry& findNext(QString uuid) ;
 
+    TrackEntry& findTrack(QDateTime when, int withinSeconds = 30) ;
     TrackEntry& findTrack(QString uuid) ;
     TrackEntry& findNextTrack(QString uuid) ;
 

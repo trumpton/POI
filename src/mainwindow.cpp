@@ -628,3 +628,4 @@ void MainWindow::on_action_ShowTrack_triggered()
 {
     refresh(false) ;
 }
+

@@ -7,6 +7,7 @@
 #include <math.h>
 #include <QDir>
 #include <QFileInfo>
+#include <QTimeZone>
 
 #define STAR  QChar(0x2605)
 
@@ -84,7 +85,23 @@ void PoiEntry::set(PoiEntry::FieldType type, QString data)
 
 const QString& PoiEntry::get(PoiEntry::FieldType type) { return sFields[(int)type] ; }
 
-void PoiEntry::setDate(QString date) {tDate.fromString(date, Qt::ISODate) ; }
+void PoiEntry::setDate(QString date, int timezoneoffset) {
+
+    QRegExp re("(\\d\\d\\d\\d):(\\d\\d):(\\d\\d) (\\d\\d):(\\d\\d):(\\d\\d)") ;
+    if (re.exactMatch(date)) {
+        // Handle '2018:08:30 15:52:14' Format
+        QDate qdate(re.cap(1).toInt(), re.cap(2).toInt(), re.cap(3).toInt()) ;
+        QTime qtime(re.cap(4).toInt(), re.cap(5).toInt(), re.cap(6).toInt()) ;
+        tDate = QDateTime(qdate, qtime, Qt::UTC) ;
+    } else {
+        // Handle ISO Date Format
+        tDate = tDate.fromString(date, Qt::ISODate) ;
+    }
+    tDate = tDate.addSecs(timezoneoffset*3600) ;
+    tDate.setTimeSpec(Qt::UTC);
+}
+
+
 QDateTime PoiEntry::date() { return tDate ; }
 
 void PoiEntry::setLatLon(double lat, double lon) { dLat = lat ; dLon = lon ; valid=true ; dirty=true ; }
@@ -736,9 +753,11 @@ bool PoiCollection::loadGpx(QString filename)
                     if (e.isElement()) {
                         QString t = e.text() ;
                         date = QDateTime::fromString(t, Qt::ISODate);
+                        date.setTimeSpec(Qt::UTC);
                     }
                 }
 
+                date = date.toUTC() ;
                 ent.set(lat, lon, elev, date) ;
 
                 // add Track Sequence
@@ -1106,6 +1125,8 @@ bool PoiCollection::removeTrack(QString uuid)
     }
 }
 
+
+
 PoiEntry& PoiCollection::find(QString uuid)
 {
     int i=poiList.size()-1 ;
@@ -1138,6 +1159,30 @@ PoiEntry& PoiCollection::findNext(QString uuid)
         return nullPoiEntry ;
     }
 }
+
+// TODO: Need to take into consideration if camera time is GMT or not
+TrackEntry& PoiCollection::findTrack(QDateTime when, int withinSeconds)
+{
+    int bestmatch=-1 ;
+    int bestwithin=withinSeconds ;
+    for (int i=trackList.size()-1; i>=0; i--) {
+        QDateTime trackdate = trackList[i].date() ;
+        qint64 diff = when.secsTo(trackdate) ;
+        if (diff>=0 && diff <= bestwithin) {
+            bestmatch = i ;
+            bestwithin = diff ;
+        } else if (diff <0 && (-diff) <= bestwithin) {
+            bestmatch = i ;
+            bestwithin = -diff ;
+        }
+    }
+    if (bestmatch>=0) {
+        return trackList[bestmatch] ;
+    } else {
+        return nullTrackEntry ;
+    }
+}
+
 
 TrackEntry& PoiCollection::findTrack(QString uuid)
 {

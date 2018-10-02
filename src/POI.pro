@@ -31,7 +31,8 @@ SOURCES += main.cpp\
     mainwindow_lists.cpp \
     easyexif/exif.cpp \
     undo.cpp \
-    mapswidget.cpp
+    mapswidget.cpp \
+    photoimportdialog.cpp
 
 HEADERS  += mainwindow.h \
     poicollection.h \
@@ -43,11 +44,13 @@ HEADERS  += mainwindow.h \
     version.h \
     easyexif/exif.h \
     undo.h \
-    mapswidget.h
+    mapswidget.h \
+    photoimportdialog.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \
-    prompt.ui
+    prompt.ui \
+    photoimportdialog.ui
 
 RESOURCES += \
     icons.qrc \

@@ -1706,7 +1706,9 @@
     <property name="title">
      <string>&amp;Import</string>
     </property>
-    <addaction name="action_Photo"/>
+    <addaction name="separator"/>
+    <addaction name="action_PhotoGps"/>
+    <addaction name="action_PhotoTime"/>
     <addaction name="separator"/>
     <addaction name="action_ImportOv2"/>
     <addaction name="action_ImportGpx"/>
@@ -1924,7 +1926,7 @@
     <string>&amp;Load Tracks from Garmin</string>
    </property>
   </action>
-  <action name="action_Photo">
+  <action name="action_Photoaction_Photo">
    <property name="text">
     <string>&amp;Photo</string>
    </property>
@@ -2009,6 +2011,16 @@
    </property>
    <property name="text">
     <string>Trails Overlay</string>
+   </property>
+  </action>
+  <action name="action_PhotoGps">
+   <property name="text">
+    <string>Photos using Embedded GPS Coordinates</string>
+   </property>
+  </action>
+  <action name="action_PhotoTime">
+   <property name="text">
+    <string>Photos using Embedded Time</string>
    </property>
   </action>
  </widget>

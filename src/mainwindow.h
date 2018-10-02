@@ -108,7 +108,8 @@ private slots:
     void on_comboBox_Rating_currentIndexChanged(int index);
     void on_actionTransfer_to_Garmin_triggered();
     void on_actionTransfer_from_Garmin_triggered();
-    void on_action_Photo_triggered();
+    void on_action_PhotoGps_triggered();
+    void on_action_PhotoTime_triggered();
     void on_actionResort_Waypoints_By_Date_triggered();
     void on_actionUndo_triggered();
 
@@ -163,7 +164,6 @@ private:
 
     // Refresh the Map
     bool refreshMap() ;
-
 
     // Return currently selected UUID of the given list widget
     QString currentSelectionUuid(QListWidget *widget) ;

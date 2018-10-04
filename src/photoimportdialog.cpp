@@ -17,8 +17,23 @@ PhotoImportDialog::~PhotoImportDialog()
 
 void PhotoImportDialog::refresh()
 {
-    // TODO: change colour to green if in the zone
-    ui->label_photoTime->setText(phototime.addSecs(3600*ui->spinBox_adjustHours->value()).toString()) ;
+    QDateTime displayphototime = phototime.addSecs(3600*ui->spinBox_adjustHours->value()) ;
+
+    // Set Palette
+    QPalette palette = ui->label_photo->palette();
+    ui->label_photo->setAutoFillBackground(true);
+    if (displayphototime>=trackfrom && displayphototime<=trackto) {
+        // Set Colour Green
+        palette.setColor(QPalette::WindowText, Qt::green);
+        ui->label_photo->setPalette(palette);
+    } else {
+        // Set Colour Red
+        palette.setColor(QPalette::WindowText, Qt::red);
+        ui->label_photo->setPalette(palette);
+        ui->label_photoTime->setPalette(palette);
+    }
+    // Set Text
+    ui->label_photoTime->setText(displayphototime.toString()) ;
 }
 
 void PhotoImportDialog::setTrackTimes(QDateTime from, QDateTime to)

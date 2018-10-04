@@ -306,9 +306,9 @@ void MainWindow::on_action_PhotoTime_triggered()
             ent.set(PoiEntry::PHOTOELEVATION, QString("%1").arg(alt)) ;
 
             ent.set(PoiEntry::EDITEDDESCR, QString("Timestamp: %1, Location: %2,%3").arg(date).arg(lat).arg(lon)) ;
-            ent.setDate(date, photoTimeOffset) ;
+            ent.setDate(date, 0) ;
 
-            if (!pid.repeat() || ent.date()<from || ent.date()>to) {
+            if (!pid.repeat() || ent.date().addSecs(3600*photoTimeOffset)<from || ent.date().addSecs(3600*photoTimeOffset)>to) {
                 pid.setPhoto(ent.date(), img);
                 pid.exec() ;
                 photoTimeOffset = pid.offset() ;

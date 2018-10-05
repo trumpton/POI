@@ -9,6 +9,8 @@
 #include <QFileInfo>
 #include <QTimeZone>
 
+#include "segmentchooser.h"
+
 #define STAR  QChar(0x2605)
 
 //
@@ -717,10 +719,42 @@ bool PoiCollection::loadGpx(QString filename)
         if (sName.isEmpty() && trknameelement.isElement()) {
             sName = trknameelement.text() ;
         }
-
         QDomNodeList trkseg = tn.toElement().elementsByTagName("trkseg") ;
 
-        for (int j=0, jn=trkseg.size(); j<jn; j++) {
+
+        // Query which segment to load if more than one exist
+        int firstseg=0, lastseg=trkseg.size() ;
+        if (lastseg>1) {
+            // Several Tracks, so prompt for which one to use
+            QStringList dates ;
+            for (int j=firstseg;j<=lastseg;j++) {
+                QDomNode sn = trkseg.item(j) ;
+                QDomNode pn = sn.toElement().firstChildElement("trkpt") ;
+                QDomNode ndate = pn.firstChildElement("time") ;
+                if (!ndate.isNull()) {
+                    QDomElement e = ndate.toElement() ;
+                    if (e.isElement()) {
+                        QString t = e.text() ;
+                        QDateTime date = QDateTime::fromString(t, Qt::ISODate);
+                        date.setTimeSpec(Qt::UTC);
+                        dates.append(date.toString());
+                    } else {
+                        dates.append("Unknown") ;
+                    }
+                }
+            }
+            SegmentChooser seg ;
+            seg.setChoices(dates);
+            seg.exec() ;
+            if (seg.choice()>0) {
+                // User selected single segment so use it
+                firstseg = seg.choice()-1 ;
+                lastseg = firstseg ;
+            }
+        }
+
+
+        for (int j=firstseg; j<=lastseg; j++) {
 
             QDomNode sn = trkseg.item(j) ;
             QDomNodeList trkpt = sn.toElement().elementsByTagName("trkpt") ;

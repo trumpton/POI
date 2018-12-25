@@ -218,7 +218,7 @@ bool MainWindow::refreshTracksPoi()
             }
             ent.setUuid(track.uuid()) ;
 
-            QString name = track.formattedName(true, true, true, false, false, false) ;
+            QString name = track.formattedName(true, true, true, true, false, false) ;
             ent.set(PoiEntry::EDITEDTITLE, name) ;
             ent.setSequence(0) ;
 

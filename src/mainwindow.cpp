@@ -77,9 +77,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->mapWebView, &MapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
     connect(ui->mapWebView, &MapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
 
-    // Handle Export Menu Refresh
-    connect(ui->menu_Export, &QMenu::aboutToShow, this, &MainWindow::on_menuExport_aboutToShow) ;
-
     on_action_ShowStandard_triggered() ;
     ui->action_ShowTrack->setChecked(false) ;
     ui->action_ShowActualDuration->setChecked(false) ;

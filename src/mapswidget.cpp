@@ -79,21 +79,31 @@ void MapsWidget::initialise2(bool ok)
 {
     if (cachedWorkingCollectionUuid.isEmpty()) return ;
 
-    // This gets called twice
+    // In QT 5.95, this function got called twice, so the registration is checked
+    // so that it is only performed once - the javascript call will fail on the first
+    // pass.
+    // In 5.15, this function gets called once, and both the registration and the
+    // initial javascript run are performed in the same pass.
+
     if (ok) {
+
         if (!this->page()->webChannel()) {
             // On First Load-Finished, set up the webchannel
-            qDebug() << "MapsWidget::loadFinished(true) - Initial Load" ;
             this->page()->setWebChannel(&channel) ;
             channel.registerObject("MapsWidget", this) ;
-        } else {
-            // On Second Load-Finished, initialise the javascript (connect back to channel & register workingcollectionuuid)
-            qDebug() << "MapsWidget::loadFinished(true) - Channel Configuration Complete" ;
-            runJavaScript("initialise3();") ;
+            QHash<QString, QObject *> o = channel.registeredObjects() ;
+            qDebug() << "MapsWidget: Registering Object" ;
+            qDebug() << "MapsWidget::loadFinished(true) - Initial Load" ;
+
         }
+
+        // initialise the javascript (connect back to channel & register workingcollectionuuid)
+        runJavaScript("initialise3();") ;
+        qDebug() << "MapsWidget::loadFinished(true) - Channel Configuration Complete" ;
+
     } else {
-        qDebug() << "MapsWidget::loadFinished(false)" ;
         QMessageBox::information(NULL, "Error", "Error, unable to load Maps") ;
+        qDebug() << "MapsWidget::loadFinished(false)" ;
     }
 }
 

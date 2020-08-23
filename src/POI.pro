@@ -10,13 +10,13 @@ QT += webenginewidgets
 # Windows
 #QT +=  webchannel
 
-CONFIG += qml_debug
+#CONFIG += qml_debug
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = POI
 TEMPLATE = app
 
-GIT_VERSION = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --always --tags)
+GIT_VERSION = $$system(git --git-dir $$PWD/../.git --work-tree $$PWD describe --always --tags)
 DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 SOURCES += main.cpp\

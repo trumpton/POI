@@ -1228,11 +1228,17 @@
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
              <widget class="QComboBox" name="comboBox_Filter">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="editable">
                <bool>false</bool>
               </property>
               <property name="insertPolicy">
-               <enum>QComboBox::InsertAlphabetically</enum>
+               <enum>QComboBox::InsertAtBottom</enum>
               </property>
              </widget>
             </item>
@@ -1684,7 +1690,7 @@
      <x>0</x>
      <y>0</y>
      <width>1209</width>
-     <height>23</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

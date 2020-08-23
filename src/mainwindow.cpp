@@ -425,8 +425,8 @@ bool MainWindow::updateForm()
 
 bool MainWindow::updateSearchFilter()
 {
-
         QStringList filterEntries ;
+
         for (int i=0; i<fileCollection.size(); i++) {
             QRegExp re("[^a-zA-Z0-9★]") ;
             PoiEntry& file = fileCollection.at(i) ;
@@ -457,17 +457,26 @@ bool MainWindow::updateSearchFilter()
         filterEntries.sort() ;
 
         ui->comboBox_Filter->blockSignals(true) ;
-        QString currentText = ui->comboBox_Filter->currentText() ;
-        ui->comboBox_Filter->clear() ;
-        ui->comboBox_Filter->addItem("") ;
 
+        // Get current text
+        QString currentText = ui->comboBox_Filter->currentText() ;
+
+        ui->comboBox_Filter->clear() ;
+        ui->comboBox_Filter->addItem(" -- Show All -- ") ;
+        ui->comboBox_Filter->addItem(" -- Undefined -- ") ;
+/*
+        ui->comboBox_Filter->addItem(QString(STAR)) ;
+        ui->comboBox_Filter->addItem(QString(STAR)+QString(STAR)) ;
+        ui->comboBox_Filter->addItem(QString(STAR)+QString(STAR)+QString(STAR)) ;
+*/
         for (int i=0; i<filterEntries.size(); i++) {
             QString ent = filterEntries.at(i) ;
             ui->comboBox_Filter->addItem(ent);
-            if (filterEntries.at(i).compare(currentText)==0) {
-                ui->comboBox_Filter->setCurrentIndex(i+1);
-            }
         }
+
+        // Search for current text and re-set index
+        int idx = ui->comboBox_Filter->findText(currentText) ;
+        if (idx>=0) ui->comboBox_Filter->setCurrentIndex(idx) ;
 
         ui->comboBox_Filter->blockSignals(false) ;
 }
@@ -475,7 +484,8 @@ bool MainWindow::updateSearchFilter()
 bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QString filterText)
 {
     bool isstar = (filterText.size()>0 && filterText.at(0) == STAR) ;
-    bool selectall = filterText.isEmpty() ;
+    bool selectall = filterText == QString(" -- Show All -- ") ;
+    bool selectempty = filterText == QString(" -- Undefined -- ") ;
 
     if (collection==NULL || widget==NULL) return false ;
 
@@ -487,9 +497,11 @@ bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QStr
     // Populate List
     int size = collection->size() ;
     for (int i=0; i<size; i++) {
+
         QString type = collection->at(i).get(PoiEntry::EDITEDTYPE).toLower() ;
 
-        if (selectall || (isstar && type.compare(filterText)==0) || (!isstar && type.contains(filterText))) {
+        if (selectall || (selectempty && type.isEmpty()) ||
+                (isstar && type.compare(filterText)==0) || (!isstar && type.contains(filterText))) {
 
             QString title = collection->at(i).get(PoiEntry::EDITEDTITLE) ;
             QString sequence ;

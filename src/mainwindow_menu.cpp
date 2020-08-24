@@ -644,7 +644,7 @@ void MainWindow::on_action_FindLocation_triggered()
 
 void MainWindow::on_action_About_POI_triggered()
 {
-    QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIVERSION) + QString(". Build ") + QString(POIBUILD), QMessageBox::Ok) ;
+    QMessageBox::information(this, QString("POI"), QString("Version ") + QString(POIBUILD), QMessageBox::Ok) ;
 }
 
 

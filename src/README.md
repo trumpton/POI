@@ -20,4 +20,51 @@ OSM - this is used to specify the base map, and the Nomaitm Open Streetmaps geoc
 Here - this is used to specify the Here geocoding (application id and code required in the keys section)
 Bing - this is used to specify the Bing aerial maps (key required in the keys section)
 
+# Building - Preparation
+
+Ensure that all of the QT modules and supporting apps are installed, including:
+
+   qtcreator, qt5, qt5-default
+  
+   qtwebengine5-dev, libqt5webenginewidgets5, qtwebenginewidgets-dev, 
+   qtdeclarative5-dev
+
+   g++, cmake
+
+In order to create an AppImage (optional), you will also need: linuxdeployqt and appimagetool, available from:
+
+  https://github.com/probonopd/linuxdeployqt/releases
+  https://github.com/AppImage/AppImageKit/releases/tag/continuous
+
+These tools should be installed into your path.
+
+# Building - Configuration and Build
+
+Create an apikeys.h file, using the distributed example
+Optionally, create a POI.ini file, using the distributed example
+
+Either make with qtcreator, or manually create a build folder at the same level as the source folder and make as follows:
+
+  mkdir build
+  cd build
+  /usr/lib/qt5/bin/qmake -o Makefile ../src/POI.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
+  make
+
+# Building - Creating a Release
+
+If you wish to create an AppImage, you can also do the following
+
+  cd ../release
+  cp ../build/POI .
+  linuxdeployqt POI
+
+# Debugging
+
+Add the following line to the command line in order to use a chromium-based browser to debug embedded javascript:
+
+  --remote-debugging-port=7890
+
+Then connect the browser to:
+
+  http://localhost:7890/
 

@@ -5,31 +5,24 @@
 #include <QSettings>
 #include <QDataStream>
 
+// INI File Name
+#define INIFILE "POI.ini"
+
 //-----------------------------------------------------------------------------
 //
 // Default Tile Server / URLs
 //
 
 // Base Map
-#define TILE_MAP "OSM"
+//#define TILE_MAP "OSM"
+
+// Default Zooms
 #define ZOOM_MAP 19
-
-// Aerial View
-#define TILE_AERIAL "Bing"
 #define ZOOM_AERIAL 17
-
-// Satellite Overlay
-#define TILE_OVERLAY "Bing"
 #define ZOOM_OVERLAY 17
-
-// Contoured Map
-#define TILE_CONTOUR "https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png"
-//#define TILE_CONTOUR "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
 #define ZOOM_CONTOUR 19
-
-// Trails Overlay
-#define TILE_TRAIL "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"
 #define ZOOM_TRAIL 19
+
 
 //-----------------------------------------------------------------------------
 //
@@ -48,13 +41,18 @@ public:
     explicit Configuration(QWidget *parent = 0);
     ~Configuration();
 
+    void reloadIni() ;
+
     QString& poiFolder() ;
     QString& tracksFolder() ;
     QString& importFolder() ;
     QString& garminFolder() ;
     QString& importFilter() ;
     QString& imageFolder() ;
+    QString& iniFolder() ;
+
     bool importMove() ;
+    bool iniFileLoadedOK() ;
 
     QString& openFolder() ;
     void setOpenFolder(QString folder) ;
@@ -91,12 +89,19 @@ private slots:
 
     void on_pushButton_ImageFolder_clicked();
 
+    void on_pushButton_IniFolder_clicked();
+
 private:
-    QString sFileName, sGarmin, sTracks, sImportFolder, sOpenFolder, sImageFolder, sImport, sFilter;
+    QString sFileName, sGarmin, sTracks ;
+    QString sImportFolder, sOpenFolder, sImageFolder, sIniFolder ;
+    QString sImport, sFilter;
     bool bMove ;
     QSettings *settings ;
     QSettings *filesettings ;
     Ui::Configuration *ui;
+
+    // Expand Keys for src url
+    QString expandkeys(QString src);
 
 };
 

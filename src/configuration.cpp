@@ -2,8 +2,8 @@
 #include "ui_configuration.h"
 
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QDir>
-#include "apikeys.h"
 
 
 Configuration::Configuration(QWidget *parent) :
@@ -12,21 +12,31 @@ Configuration::Configuration(QWidget *parent) :
 {
     ui->setupUi(this);
     settings = new QSettings("trumpton.uk", "Poi");
-#ifdef _WINDOWS_
-    QString inifilename = qApp->applicationFilePath().replace(".EXE",".ini").replace(".exe",".ini") ;
-#else
-    QString inifilename = qApp->applicationFilePath() + QString(".ini") ;
-#endif
-    filesettings = new QSettings(inifilename, QSettings::IniFormat) ;
-
-    QString bing = filesettings->value("keys/bing", "Unknown").toString();
-
+    filesettings=NULL ;
+    reloadIni() ;
     QDir::setCurrent(poiFolder()) ;
+}
+
+void Configuration::reloadIni() {
+
+    // Load keys ini file from designated folder
+
+    if (filesettings) delete filesettings ;
+
+    if (QDir(iniFolder()).exists(INIFILE)) {
+        // INI file exists, so load it
+        filesettings = new QSettings(iniFolder() + QString("/") + QString(INIFILE),
+                                     QSettings::IniFormat) ;
+    } else {
+        // Not found, so prompt TODO
+        filesettings = new QSettings() ;
+    }
 }
 
 Configuration::~Configuration()
 {
-    delete settings ;
+    if (filesettings) delete filesettings ;
+    if (settings) delete settings ;
     delete ui ;
 }
 
@@ -59,6 +69,13 @@ QString& Configuration::imageFolder()
     sImageFolder = settings->value("image").toString() ;
     return sImageFolder ;
 }
+
+QString& Configuration::iniFolder()
+{
+    sIniFolder = settings->value("ini").toString() ;
+    return sIniFolder ;
+}
+
 
 QString& Configuration::importFilter()
 {
@@ -97,6 +114,7 @@ int Configuration::exec()
     } else {
         ui->radioButton_copyData->setChecked(true) ;
     }
+    ui->confIniFolder->setText(iniFolder()) ;
 
     int i=QDialog::exec() ;
     if (i==QDialog::Accepted) {
@@ -107,6 +125,7 @@ int Configuration::exec()
         settings->setValue("image", ui->confImageFolder->text()) ;
         settings->setValue("filter", ui->importFilter->text()) ;
         settings->setValue("move", ui->radioButton_moveData->isChecked()) ;
+        settings->setValue("ini", ui->confIniFolder->text()) ;
 
         QDir::setCurrent(poiFolder()) ;
     }
@@ -119,12 +138,12 @@ int Configuration::exec()
 
 int Configuration::aerialTileZoom()
 {
-    return filesettings->value("satellite/zoom",ZOOM_AERIAL).toInt() ;
+    return filesettings->value("aerial/zoom",ZOOM_AERIAL).toInt() ;
 }
 
 int Configuration::satelliteOverlayZoom()
 {
-    return filesettings->value("satelliteoverlay/zoom",ZOOM_OVERLAY).toInt() ;
+    return filesettings->value("aerialoverlay/zoom",ZOOM_OVERLAY).toInt() ;
 }
 
 int Configuration::mapTileZoom()
@@ -142,17 +161,16 @@ int Configuration::trailTileZoom()
     return filesettings->value("trail/zoom",ZOOM_TRAIL).toInt() ;
 }
 
-
 QString Configuration::aerialTileUrl()
 {
-    return filesettings->value("satellite/url",
-        QString(TILE_AERIAL)).toString() ;
+    return expandkeys(filesettings->value("aerial/url",
+        QString("")).toString()) ;
 }
 
 QString Configuration::satelliteOverlayUrl()
 {
-    return filesettings->value("satelliteoverlay/url",
-        QString(TILE_OVERLAY)).toString() ;
+    return expandkeys(filesettings->value("aerialoverlay/url",
+        QString("")).toString()) ;
 }
 
 QString Configuration::geocodeType()
@@ -164,45 +182,52 @@ QString Configuration::geocodeType()
 QString Configuration::bingKey()
 {
     return filesettings->value("keys/bing",
-        QString(BINGKEY)).toString() ;
-}
-
-QString Configuration::googleKey()
-{
-    return filesettings->value("keys/google",
-        QString(GOOGLEKEY)).toString();
+        QString("")).toString() ;
 }
 
 QString Configuration::hereId()
 {
     return filesettings->value("keys/hereid",
-        QString(HEREID)).toString() ;
+        QString("")).toString() ;
 }
 
 QString Configuration::hereCode()
 {
     return filesettings->value("keys/herecode",
-        QString(HERECODE)).toString() ;
+        QString("")).toString() ;
 }
 
 QString Configuration::mapTileUrl()
 {
-    return filesettings->value("map/url",
-        QString(TILE_MAP)).toString() ;
+    return expandkeys(filesettings->value("map/url",
+        QString("OSM")).toString()) ;
 }
 
 QString Configuration::contourTileUrl()
 {
-    return filesettings->value("contour/url",
-        QString(TILE_CONTOUR)).toString() ;
+    return expandkeys(filesettings->value("contour/url",
+        QString("")).toString()) ;
 }
 
 QString Configuration::trailTileUrl()
 {
-    return filesettings->value("trail/url",
-       QString(TILE_TRAIL)).toString() ;
+    return expandkeys(filesettings->value("trailsoverlay/url",
+       QString("")).toString()) ;
 }
 
+// TODO: Key Expansion
+QString Configuration::expandkeys(QString src)
+{
+    // for step through keys section
+    filesettings->beginGroup("keys");
+    foreach (const QString &key, filesettings->childKeys()) {
+        QString s = QString("{") + key + QString("}") ;
+        QString d = filesettings->value(key).toString();
+        src.replace(s,d) ;
+    }
+    filesettings->endGroup();
+    return src ;
+}
 
 //
 // Form Controls
@@ -257,4 +282,46 @@ void Configuration::on_pushButton_ImageFolder_clicked()
                 QFileDialog::ShowDirsOnly) ;
     ui->confImageFolder->setText(results) ;
     sImageFolder = results ;
+}
+
+void Configuration::on_pushButton_IniFolder_clicked()
+{
+
+    QString results = QFileDialog::getExistingDirectory(0,
+                QString("Folder containing ") + INIFILE,
+                iniFolder(),QFileDialog::ReadOnly) ;
+
+    if (!results.isEmpty() && !QDir(results).exists(INIFILE)) {
+
+        // File does not exist - attempt to copy one from the application folder
+
+        QMessageBox::warning(this,
+            "POI", QString("A ") + QString(INIFILE) +
+                   QString(" configuration file does not exist, attempting to create one..."));
+
+        QString src=QCoreApplication::applicationDirPath() + QString("/example-") + QString(INIFILE) ;
+        QString dst=QString(results) + QString("/") + QString(INIFILE) ;
+        QFile::copy(src, dst) ;
+
+        if (!QDir(results).exists(INIFILE)) {
+            QMessageBox::warning(this,
+                "POI", QString("Unable to create file.  Is the folder writeable?"));
+        }
+    }
+
+    if (QDir(results).exists(INIFILE)) {
+        // If file is valid, update config
+        ui->confIniFolder->setText(results) ;
+        sIniFolder = results ;
+    }
+
+    reloadIni() ;
+
+}
+
+bool Configuration::iniFileLoadedOK()
+{
+    if (filesettings==NULL) return false ;
+    if (filesettings->allKeys().count()<=0) return false ;
+    return true ;
 }

@@ -10,7 +10,8 @@
 
 cd release
 cp ../build/POI .
+cp ../src/example-POI.ini .
 
-linuxdeployqt POI -qmake=/usr/lib/qt5/bin/qmake -appimage
+#linuxdeployqt POI -qmake=/usr/lib/qt5/bin/qmake -appimage
 
-# linuxdeployqt POI -qmake=/usr/lib/qt5/bin/qmake -unsupported-allow-new-glibc -appimage
+linuxdeployqt POI -qmake=/usr/lib/qt5/bin/qmake -unsupported-allow-new-glibc -appimage

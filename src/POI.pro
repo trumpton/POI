@@ -39,7 +39,6 @@ HEADERS  += mainwindow.h \
     poicollection.h \
     configuration.h \
     cookies.h \
-    apikeys.h \
     urls.h \
     prompt.h \
     version.h \

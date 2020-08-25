@@ -48,6 +48,12 @@ MainWindow::MainWindow(QWidget *parent) :
     // Configuration and Configuration form
     configuration = new Configuration(this) ;
 
+    // Check ini loaded
+    if (!configuration->iniFileLoadedOK()) {
+        QMessageBox::warning(this,
+            "POI", QString("POI.ini could not be found.  Please use File/Settings to search for or create one."));
+    }
+
     // Configure and Load Web Pages
     ui->mapWebView->initialise(QString("qrc:///openlayers/openlayers.html"),
                                configuration->bingKey(),

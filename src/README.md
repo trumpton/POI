@@ -40,15 +40,16 @@ These tools should be installed into your path.
 
 # Building - Configuration and Build
 
-Create an apikeys.h file, using the distributed example
-Optionally, create a POI.ini file, using the distributed example
-
 Either make with qtcreator, or manually create a build folder at the same level as the source folder and make as follows:
 
   mkdir build
   cd build
   /usr/lib/qt5/bin/qmake -o Makefile ../src/POI.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
   make
+
+The configuration is not loaded from the POI.ini file, which must be manually edited if keys are to be added.
+The file is automatically created (copied from the exe folder) when the configuration directory is selected from
+the configuration menu.
 
 # Building - Creating a Release
 

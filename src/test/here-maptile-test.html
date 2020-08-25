@@ -1,0 +1,85 @@
+html>
+<head>
+  <title>Here Map Tile API Test</title>
+  <script><!--
+
+    DEFAULTAPIKEY = "Add your API key here so you don't have to keep re-entering it" ;
+
+    BU1 = "https://1.base.maps.ls.hereapi.com/maptile/2.1/maptile" ;
+    BU2 = "https://1.aerial.maps.ls.hereapi.com/maptile/2.1/maptile" ;
+    BU3 = "https://1.traffic.maps.ls.hereapi.com/maptile/2.1/traffictile" ;
+
+    function updateimage() {
+
+      var type = document.getElementById("type").value ;
+      var lat = parseFloat(document.getElementById("lat").value) ;
+      var lon = parseFloat(document.getElementById("lon").value) ;
+      var zoom = parseInt(document.getElementById("zoom").value) ;
+      var apiKey = document.getElementById("key").value ;
+      var baseurl = BU1 ;
+
+      if (type=="terrain.day" || type=="satellite.day" || type=="hybrid.day") { 
+	baseurl=BU2 ; 
+      }
+      if (type=="normal.traffic.day" || type=="normal.traffic.night" || type=="hybrid.traffic.day") { 
+	baseurl=BU3 ; 
+      }
+
+      if (apiKey=="") {
+        apiKey=DEFAULTAPIKEY ;
+      }
+
+      var latRad, n, xTile, yTile;
+
+      latRad = lat * Math.PI / 180;
+      n = Math.pow(2, zoom);
+      xTile = n * ((lon + 180) / 360);
+      yTile = n * (1-(Math.log(Math.tan(latRad) + 1/Math.cos(latRad)) /Math.PI)) / 2;
+      link= baseurl + "/newest/" + type + "/" + zoom + "/" + Math.floor(xTile) + "/" + Math.floor(yTile) + "/512/png?apiKey=" + apiKey ;
+
+      document.getElementById("tile").src = link ;
+      document.getElementById("link").innerHTML = 
+	"<p>Link: <a href='" + link + "' target='nowlink'>" + link + "</p>" ;
+    }
+
+--></script>
+
+  </head>
+
+  <body onload="updateimage();">
+
+    <p><b>This is a test html file for here.com mapping.</b></p>
+
+    <p>Map applications request maps tile-by-tile, and this file contains a script to request tiles
+    from here.com.  You must have an API key, and in order to get one, you have to create and validate
+    a here.com account.  Once you have entered the details in the form below, the appropriate tile should
+    be displayed.  If nothing is displayed, you can click on the link (which would normally display the
+    image tile) to see what error is reported.</p>
+
+    <p>Scheme: 
+      <select id="type" onchange="updateimage();">
+        <option value="normal.day">normal.day</option>
+        <option value="pedestrian.day">pedestrian.day</option>
+        <option value="terrain.day">terrain.day (Aerial only)</option>
+        <option value="satellite.day">satellite.day (Aerial only)</option>
+        <option value="hybrid.day">hybrid.day (Aerial only)</option>
+        <option value="normal.traffic.day">normal.traffic.day (Traffic only)</option>
+        <option value="normal.traffic.night">normal.traffic.night (Traffic only)</option>
+	<option value="hybrid.traffic.day">hybrid.traffic.day (Traffic only)</option>
+
+      </select>
+    </p> 
+    <p>Latitude: <input id="lat" value="52.204932" onchange="updateimage();"/></p>
+    <p>Longitude: <input id="lon" value="0.116032" onchange="updateimage();"/></p>
+    <p>Zoom: <input id="zoom" value="16" onchange="updateimage();"/></p>
+    <p>API Key: <input id="key" value="" onchange="updateimage();"/>
+      <a href="https://developer.here.com/" target="here">
+	Create / Manage REST API Key
+      </a>
+    </p>
+
+    <div id="link"></div>
+    <img id="tile"/>
+
+  </body>
+</html>

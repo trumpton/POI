@@ -489,8 +489,10 @@ QString& PoiCollection::name() {
 }
 
 void PoiCollection::setName(QString name) {
-    sName = name ;
-    bListDirty = true ;
+    if (sName.compare(name)!=0) {
+        sName = name ;
+        bListDirty = true ;
+    }
 }
 
 
@@ -1261,7 +1263,9 @@ bool PoiCollection::importOv2(QString filename)
     } while (success && !inputstream.atEnd()) ;
 
     inputstream.close() ;
-    bListDirty=true ;
+    if (i>=0) {
+        bListDirty=true ;
+    }
     return success ;
 }
 

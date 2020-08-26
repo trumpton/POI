@@ -1,5 +1,7 @@
 # POI - Points of Interest and Track management.
 
+<img src="./manual/POI_Manager_Screenshot.png">
+
 # Background and Overview
 
 This program is capable of managing points of interest files, which are saved in both .gpx and .ov2 formats for Garmin and TomTom GPSs.

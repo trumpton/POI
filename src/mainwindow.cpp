@@ -20,7 +20,6 @@
 #include <QDir>
 #include <QRegExp>
 #include <QStringList>
-#include "apikeys.h"
 #include "prompt.h"
 
 #define STAR  QChar(0x2605)
@@ -643,4 +642,3 @@ void MainWindow::on_action_ShowTrack_triggered()
 {
     refresh(false) ;
 }
-

@@ -1690,7 +1690,7 @@
      <x>0</x>
      <y>0</y>
      <width>1209</width>
-     <height>26</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1753,10 +1753,18 @@
     <property name="title">
      <string>Trac&amp;k</string>
     </property>
+    <widget class="QMenu" name="menuDelete_Track_Points">
+     <property name="title">
+      <string>Delete Track Points</string>
+     </property>
+     <addaction name="action_DeleteTrackPointBeforeSelection"/>
+     <addaction name="action_DeleteTrackPointAfterSelection"/>
+    </widget>
     <addaction name="actionResort_Waypoints_By_Date"/>
     <addaction name="action_CreateTrackFromWaypoints"/>
     <addaction name="actionSnap"/>
     <addaction name="action_ReduceTrackPoints"/>
+    <addaction name="menuDelete_Track_Points"/>
    </widget>
    <widget class="QMenu" name="menu_Search">
     <property name="title">
@@ -2027,6 +2035,22 @@
   <action name="action_PhotoTime">
    <property name="text">
     <string>Photos using Embedded Time</string>
+   </property>
+  </action>
+  <action name="action_DeleteTrackPointBeforeSelection">
+   <property name="text">
+    <string>Before Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Track Point Before Selection</string>
+   </property>
+  </action>
+  <action name="action_DeleteTrackPointAfterSelection">
+   <property name="text">
+    <string>After Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Track Point After Selection</string>
    </property>
   </action>
  </widget>

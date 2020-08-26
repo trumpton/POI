@@ -1242,6 +1242,18 @@ TrackEntry& PoiCollection::findNextTrack(QString uuid)
     }
 }
 
+
+TrackEntry& PoiCollection::findPrevTrack(QString uuid)
+{
+    int i = trackList.size()-1 ;
+    while (i>0 && trackList[i].uuid() != uuid) i-- ;
+    if (i>=1) {
+        return trackList[i-1] ;
+    } else {
+        return nullTrackEntry ;
+    }
+}
+
 // Import OV2 (See https://www.tomtom.com/lib/doc/ttnavsdk3_manual.pdf for format)
 bool PoiCollection::importOv2(QString filename)
 {

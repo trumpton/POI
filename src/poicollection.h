@@ -244,6 +244,7 @@ public:
     TrackEntry& findTrack(QDateTime when, int withinSeconds = 30) ;
     TrackEntry& findTrack(QString uuid) ;
     TrackEntry& findNextTrack(QString uuid) ;
+    TrackEntry& findPrevTrack(QString uuid) ;
 
     PoiEntry& at(int i) ;
     TrackEntry& trackAt(int i) ;

@@ -623,6 +623,32 @@ void MainWindow::on_action_ReduceTrackPoints_triggered()
 }
 
 
+
+void MainWindow::on_action_DeleteTrackPointBeforeSelection_triggered()
+{
+    // TODO: Undo
+    QString uuid = fileCollection.findPrevTrack(thisUuid).uuid() ;
+    while (fileCollection.findTrack(uuid).isValid()) {
+        QString prevuuid = fileCollection.findPrevTrack(uuid).uuid() ;
+        fileCollection.removeTrack(uuid) ;
+        uuid = prevuuid ;
+    }
+    refresh(true) ;
+}
+
+void MainWindow::on_action_DeleteTrackPointAfterSelection_triggered()
+{
+    // TODO: Undo
+    QString uuid = fileCollection.findNextTrack(thisUuid).uuid() ;
+    while (fileCollection.findTrack(uuid).isValid()) {
+        QString nextuuid = fileCollection.findNextTrack(uuid).uuid() ;
+        fileCollection.removeTrack(uuid) ;
+        uuid = nextuuid ;
+    }
+    refresh(true) ;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // Search Menu
@@ -848,7 +874,6 @@ void MainWindow::on_action_ShowSatelliteOverlay_toggled(bool arg1)
                              ui->action_ShowTrailsOverlay->isChecked(),
                              ui->action_ShowSatelliteOverlay->isChecked()) ;
 }
-
 
 void MainWindow::on_action_ShowTrack_toggled(bool checked)
 {

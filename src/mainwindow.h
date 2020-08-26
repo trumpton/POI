@@ -126,6 +126,10 @@ private slots:
 
     void on_action_ShowTrack_triggered();
 
+    void on_action_DeleteTrackPointBeforeSelection_triggered();
+
+    void on_action_DeleteTrackPointAfterSelection_triggered();
+
 private:
 
     // Update the lists and entry form

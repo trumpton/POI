@@ -12,6 +12,10 @@ When walking tracks are saved, the first waypoint on the track is also saved to 
 
 This program is provided free of charge, and no warranty or guarantees are offered.
 
+# Manual
+The latest manual can be found here: 
+https://github.com/trumpton/POI/blob/master/manual/POI_Manager_Manual_v0.1.pdf
+
 # Configuration
 
 The program has certain map tile servers built-in, but these can be overridden using the POI.ini file (an example of which exists in the src directory).

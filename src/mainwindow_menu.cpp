@@ -763,7 +763,9 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
         return ;
     }
 
-    garmin.setNameFilters(QStringList()<< configuration->importFilter());
+    QStringList filter ;
+    filter = configuration->importFilter().split(";") ;
+    garmin.setNameFilters(filter);
     QStringList fileList = garmin.entryList();
 
     QProgressDialog dlg(QString("POI"), QString("Abort"), 0, fileList.size(), this) ;

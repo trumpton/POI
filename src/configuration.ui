@@ -258,7 +258,7 @@
         <item>
          <widget class="QLineEdit" name="importFilter">
           <property name="text">
-           <string>Track_*.gpx</string>
+           <string>Track_*.gpx;Waypoints_*.gpx</string>
           </property>
          </widget>
         </item>

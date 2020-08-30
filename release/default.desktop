@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=POI Editor
+Name=POI Manager
 Exec=AppRun %F
 Icon=default
 Comment=Points of Interest File Manager

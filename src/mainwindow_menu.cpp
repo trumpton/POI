@@ -549,8 +549,12 @@ void MainWindow::on_NewTrackPoint_clicked()
         TrackEntry newpoint ;
         double lat = thisent.lat() + (nextent.lat() - thisent.lat()) / 2 ;
         double lon = thisent.lon() + (nextent.lon() - thisent.lon()) / 2 ;
+        double alt = thisent.elev() + (nextent.elev() - thisent.elev()) / 2 ;
+        QDateTime thisdate = thisent.date();
+        QDateTime nextdate = nextent.date() ;
+        QDateTime date = thisdate.addSecs(thisdate.secsTo(nextdate)/2) ;
         int seq = thisent.sequence() ;
-        newpoint.set(lat, lon, 0, QDateTime()) ;
+        newpoint.set(lat, lon, alt, date) ;
         newpoint.setSequence(seq+1);
         fileCollection.add(newpoint) ;
         thisUuid = newpoint.uuid() ;

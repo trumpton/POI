@@ -403,6 +403,8 @@ void PoiCollection::sortBySequence()
         trackList[i].setSequence(seq) ;
         seq+=2 ;
     }
+
+    calculateTrack() ;
 }
 
 void PoiCollection::reorderWaypointByDate()
@@ -1037,8 +1039,9 @@ bool PoiCollection::saveGpx(QString filename)
             eelev.appendChild(delev) ;
             trkpt.appendChild(eelev) ;
 
+            // TODO: DATE NOT BEING SAVED !!!
             if (ent.date().isValid()) {
-                QDomElement edate = doc.createElement("date") ;
+                QDomElement edate = doc.createElement("time") ;
                 QDomText ddate = doc.createTextNode(QString("%1").arg(ent.date().toString(Qt::ISODate))) ;
                 edate.appendChild(ddate) ;
                 trkpt.appendChild(edate) ;

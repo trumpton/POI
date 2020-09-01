@@ -82,11 +82,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->mapWebView, &MapsWidget::searchResultsReady, this, &MainWindow::mapCallbackSearchResultsReady);
     connect(ui->mapWebView, &MapsWidget::searchFailed, this, &MainWindow::mapCallbackSearchFailed);
 
+    // Refresh menu before opening
+    connect(ui->menu_Export, &QMenu::aboutToShow, this, &MainWindow::on_menuExport_aboutToShow) ;
+
+    // Initialise
     on_action_ShowStandard_triggered() ;
     ui->action_ShowTrack->setChecked(false) ;
     ui->action_ShowActualDuration->setChecked(false) ;
 
     refresh() ;
+
+    // Setup Timer
+    timer.setSingleShot(false) ;
+    timer.setInterval(500) ;
+    timer.callOnTimeout(this, &MainWindow::tick) ;
+    timer.start(500) ;
+
 }
 
 MainWindow::~MainWindow()
@@ -94,6 +105,17 @@ MainWindow::~MainWindow()
     saveCollection() ;
     delete configuration ;
     delete ui;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Tick Functions
+//
+void MainWindow::tick()
+{
+    if (ui->menu_Export->isVisible()) {
+        on_menuExport_aboutToShow() ;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -359,8 +381,15 @@ void MainWindow::on_menuExport_aboutToShow()
         QDir garmin(garminfolder) ;
         garminexists = garmin.isReadable() ;
     }
+    QString garminfromfolder = configuration->garminFromFolder() ;
+    bool garminfromexists = false ;
+    if (!garminfromfolder.isEmpty()) {
+        QDir garminfrom(garminfromfolder) ;
+        garminfromexists = garminfrom.isReadable() ;
+    }
     ui->actionTransfer_to_Garmin->setEnabled(garminexists) ;
-    ui->actionTransfer_from_Garmin->setEnabled(garminexists) ;
+    ui->actionTransfer_from_Garmin->setEnabled(garminexists||garminfromexists) ;
+    ui->action_UnmountGarminDevice->setEnabled(garminexists||garminfromexists) ;
 }
 
 bool MainWindow::updateMapSelection(int zoom)
@@ -642,3 +671,4 @@ void MainWindow::on_action_ShowTrack_triggered()
 {
     refresh(false) ;
 }
+

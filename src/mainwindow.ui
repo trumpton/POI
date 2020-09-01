@@ -1690,7 +1690,7 @@
      <x>0</x>
      <y>0</y>
      <width>1209</width>
-     <height>23</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1735,6 +1735,7 @@
     </property>
     <addaction name="actionTransfer_from_Garmin"/>
     <addaction name="actionTransfer_to_Garmin"/>
+    <addaction name="action_UnmountGarminDevice"/>
     <addaction name="separator"/>
     <addaction name="action_LaunchTomTom"/>
     <addaction name="separator"/>
@@ -2051,6 +2052,11 @@
    </property>
    <property name="toolTip">
     <string>Delete Track Point After Selection</string>
+   </property>
+  </action>
+  <action name="action_UnmountGarminDevice">
+   <property name="text">
+    <string>&amp;Eject Garmin Device</string>
    </property>
   </action>
  </widget>

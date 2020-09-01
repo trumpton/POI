@@ -47,6 +47,7 @@ public:
     QString& tracksFolder() ;
     QString& importFolder() ;
     QString& garminFolder() ;
+    QString& garminFromFolder() ;
     QString& importFilter() ;
     QString& imageFolder() ;
     QString& iniFolder() ;
@@ -91,8 +92,10 @@ private slots:
 
     void on_pushButton_IniFolder_clicked();
 
+    void on_pushButton_SearchGarminFrom_clicked();
+
 private:
-    QString sFileName, sGarmin, sTracks ;
+    QString sFileName, sGarmin, sGarminFrom, sTracks ;
     QString sImportFolder, sOpenFolder, sImageFolder, sIniFolder ;
     QString sImport, sFilter;
     bool bMove ;

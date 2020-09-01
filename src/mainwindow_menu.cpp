@@ -755,6 +755,7 @@ void MainWindow::on_actionTransfer_to_Garmin_triggered()
 void MainWindow::on_actionTransfer_from_Garmin_triggered()
 {
     QDir garmin(configuration->garminFolder()) ;
+    QDir garminfrom(configuration->garminFromFolder()) ;
     QDir import(configuration->importFolder()) ;
 
     if (!garmin.isReadable()) {
@@ -769,8 +770,21 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
 
     QStringList filter ;
     filter = configuration->importFilter().split(";") ;
+
+    QStringList fileList ;
+    QStringList pathList ;
+
     garmin.setNameFilters(filter);
-    QStringList fileList = garmin.entryList();
+    for (int i=0; i<garmin.entryList().size(); i++) {
+        pathList.append(configuration->garminFolder() + QDir::separator()) ;
+        fileList.append(garmin.entryList().at(i)) ;
+    }
+
+    garminfrom.setNameFilters(filter) ;
+    for (int i=0; i<garminfrom.entryList().size(); i++) {
+        pathList.append(configuration->garminFromFolder() + QDir::separator()) ;
+        fileList.append(garminfrom.entryList().at(i)) ;
+    }
 
     QProgressDialog dlg(QString("POI"), QString("Abort"), 0, fileList.size(), this) ;
     dlg.setWindowModality(Qt::WindowModal);
@@ -784,7 +798,7 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
         dlg.setValue(i) ;
         QApplication::processEvents() ;
 
-        QString src = configuration->garminFolder() + QDir::separator() + fileList.at(i) ;
+        QString src = pathList.at(i) + fileList.at(i) ;
         QString dst = configuration->importFolder() + QDir::separator() + fileList.at(i) ;
 
         if (QFile::exists(dst)) { QFile::remove(dst); }
@@ -796,7 +810,7 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
                 garmin.remove(src) ;
             }
         } else {
-            QMessageBox::information(this, QString("POI"), QString("Error Transferring ") + fileList.at(i), QMessageBox::Ok) ;
+            QMessageBox::information(this, QString("POI"), QString("Error Transferring ") + pathList.at(i) + fileList.at(i), QMessageBox::Ok) ;
         }
 
         if (dlg.wasCanceled()) {
@@ -819,6 +833,26 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
 
 }
 
+// Applicable to Linux Devices Only
+// Assumes mounts are made in /media/username/devicename
+void MainWindow::on_action_UnmountGarminDevice_triggered()
+{
+    QString device1, device2 ;
+    QRegExp srch ;
+    srch.setPattern("^(/.*/.*/.*)/.+") ;
+    srch.setMinimal(true) ;
+
+    if (srch.indexIn(configuration->garminFolder())!=-1) {
+        QString cmd = QString("/usr/bin/umount ") + srch.cap(1) ;
+        system(cmd.toLatin1()) ;
+    }
+
+    if (srch.indexIn(configuration->garminFromFolder())!=-1) {
+        QString cmd = QString("/usr/bin/umount ") + srch.cap(1) ;
+        system(cmd.toLatin1()) ;
+    }
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 //

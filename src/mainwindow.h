@@ -8,6 +8,7 @@
 #include <QListWidget>
 #include <QPixmap>
 #include <QLabel>
+#include <QTimer>
 
 #include "undo.h"
 
@@ -130,6 +131,10 @@ private slots:
 
     void on_action_DeleteTrackPointAfterSelection_triggered();
 
+    void on_action_UnmountGarminDevice_triggered();
+
+    void tick() ;
+
 private:
 
     // Update the lists and entry form
@@ -192,6 +197,8 @@ private:
     // Search QUery
     QString searchtext ;
 
+    // Timer
+    QTimer timer ;
 };
 
 #endif // MAINWINDOW_H

@@ -52,6 +52,12 @@ QString& Configuration::garminFolder()
     return sGarmin ;
 }
 
+QString& Configuration::garminFromFolder()
+{
+    sGarminFrom = settings->value("garminfrom").toString() ;
+    return sGarminFrom ;
+}
+
 QString& Configuration::tracksFolder()
 {
     sTracks = settings->value("tracks").toString() ;
@@ -109,6 +115,7 @@ int Configuration::exec()
     ui->confImportFolder->setText(importFolder()) ;
     ui->confImageFolder->setText(imageFolder()) ;
     ui->confGarminFolder->setText(garminFolder()) ;
+    ui->confGarminFromFolder->setText(garminFromFolder()) ;
     if (importMove()) {
         ui->radioButton_moveData->setChecked(true) ;
     } else {
@@ -120,6 +127,7 @@ int Configuration::exec()
     if (i==QDialog::Accepted) {
         settings->setValue("folder", ui->confPoiFolder->text()) ;
         settings->setValue("garmin", ui->confGarminFolder->text()) ;
+        settings->setValue("garminfrom", ui->confGarminFromFolder->text()) ;
         settings->setValue("tracks", ui->confTracksFolder->text()) ;
         settings->setValue("import", ui->confImportFolder->text()) ;
         settings->setValue("image", ui->confImageFolder->text()) ;
@@ -246,13 +254,22 @@ void Configuration::on_pushButton_SearchPoi_clicked()
 void Configuration::on_pushButton_SearchGarmin_clicked()
 {
     QString results = QFileDialog::getExistingDirectory(0,
-                QString("Garmin Device"),
+                QString("Garmin Device (Read/Write Folder)"),
                 garminFolder(),
                 QFileDialog::ShowDirsOnly) ;
     ui->confGarminFolder->setText(results) ;
     sGarmin = results ;
 }
 
+void Configuration::on_pushButton_SearchGarminFrom_clicked()
+{
+    QString results = QFileDialog::getExistingDirectory(0,
+                QString("Garmin Device (Read Folder)"),
+                garminFromFolder(),
+                QFileDialog::ShowDirsOnly) ;
+    ui->confGarminFromFolder->setText(results) ;
+    sGarminFrom = results ;
+}
 
 void Configuration::on_pushButton_SearchTracks_clicked()
 {
@@ -325,3 +342,5 @@ bool Configuration::iniFileLoadedOK()
     if (filesettings->allKeys().count()<=0) return false ;
     return true ;
 }
+
+

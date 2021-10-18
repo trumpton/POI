@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
                                configuration->bingKey(),
                                configuration->geocodeType(),
                                configuration->hereId(), configuration->hereCode(),
+                               configuration->hereApiKey(),
                                configuration->aerialTileZoom(), configuration->aerialTileUrl(),
                                configuration->satelliteOverlayZoom(), configuration->satelliteOverlayUrl(),
                                configuration->mapTileZoom(), configuration->mapTileUrl(),

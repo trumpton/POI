@@ -66,6 +66,7 @@ public:
     QString googleKey() ;
     QString hereId() ;
     QString hereCode() ;
+    QString hereApiKey() ;
 
 
     int aerialTileZoom() ;

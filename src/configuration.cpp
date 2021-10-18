@@ -205,6 +205,12 @@ QString Configuration::hereCode()
         QString("")).toString() ;
 }
 
+QString Configuration::hereApiKey()
+{
+    return filesettings->value("keys/hereapikey",
+        QString("")).toString() ;
+}
+
 QString Configuration::mapTileUrl()
 {
     return expandkeys(filesettings->value("map/url",

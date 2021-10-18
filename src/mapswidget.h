@@ -17,7 +17,7 @@ class MapsWidget: public QWebEngineView
 
 private:
     QString cachedGeocodeType ;
-    QString cachedBingKey, cachedHereId, cachedHereCode ;
+    QString cachedBingKey, cachedHereId, cachedHereCode, cachedHereApiKey ;
     QString cachedWorkingCollectionUuid, cachedFileCollectionUuid, cachedTrackCollectionUuid ;
     int cachedAerialTileZoom, cachedSatelliteOverlayTileZoom, cachedMapTileZoom, cachedContourTileZoom, cachedTrailTileZoom ;
     QString cachedAerialTileUrl, cachedSatelliteOverlayTileUrl, cachedMapTileUrl, cachedContourTileUrl, cachedTrailTileUrl ;
@@ -51,6 +51,7 @@ public:
     // Initialise key, and load web page
     void initialise(QString url,
                     QString bingKeyData, QString geocodeType, QString hereId, QString hereCode,
+                    QString hereApiKey,
                     int aerialTileZoom, QString aerialTileUrl,
                     int satelliteOverlayTileZoom, QString satelliteOverlayTileUrl,
                     int mapTileZoom, QString mapTileUrl,

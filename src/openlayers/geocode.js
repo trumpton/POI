@@ -16,7 +16,7 @@ class OSM {
        };
     }
 
-    setkey(k1, k2) {
+    setkey(k1, k2, k3) {
         // Keys are not required
     }
 
@@ -36,6 +36,7 @@ class OSM {
             callback( {
                      error: false,
                      status: 'OK',
+                     errormessage: 'OK',
                      placeid: results[0].place_id || '',
                      lat: results[0].lat || '0',
                      lon: results[0].lon || '0',
@@ -47,12 +48,14 @@ class OSM {
                      state: (results[0].address.country==="UK") ?
                                 results[0].address.county || results[0].address.state || '' :
                                 results[0].address.state || results[0].address.county || '',
-                     country: results[0].address.country || ''
+                     country: results[0].address.country || '',
+                     country_code: results[0].address.country_code || ''
             }) ;
         } else {
             callback( {
                          error: true,
-                         status: 'FAILED'
+                         status: 'FAILED',
+                         errormessage: 'error'
             }) ;
         }
     }
@@ -62,6 +65,7 @@ class OSM {
             callback( {
                          error: false,
                          status: 'OK',
+                         errormessage: 'OK',
                          placeid: results.place_id || '',
                          lat: results.lat || 0,
                          lon: results.lon || 0,
@@ -73,12 +77,14 @@ class OSM {
                          state: (results.address.country==="UK") ?
                                     results.address.county || results.address.state || '' :
                                     results.address.state || results.address.county || '',
-                         country: results.address.country || ''
+                         country: results.address.country || '',
+                         contry_code: results.address.country_code || ''
             }) ;
         } else {
             callback( {
                         error: true,
-                        status: 'FAILED'
+                         status: 'FAILED',
+                         errormessage: 'error'
             }) ;
         }
 
@@ -98,81 +104,86 @@ class HERE {
    * @constructor
    */
 
-    constructor(id, code) {
+    constructor(id, code, apikey) {
        this.settings = {
-          searchurl: 'https://geocoder.api.here.com/6.2/geocode.json?app_id=APPID&app_code=APPCODE&searchtext=QUERY',
-          geocodeurl: 'https://reverse.geocoder.api.here.com/6.2/reversegeocode.json?app_id=APPID&app_code=APPCODE&&mode=retrieveAddresses&prox=LAT,LON,25',
+          searchurl: 'https://geocode.search.hereapi.com/v1/geocode?apiKey=APIKEY&q=QUERY',
+          geocodeurl: 'https://revgeocode.search.hereapi.com/v1/revgeocode?apiKey=APIKEY&at=LAT,LON',
           searchoptions: {},
           geocodeoptions: {},
           id: id,
-          code: code
+          code: code,
+          apikey: apikey
        };
     }
 
     search(query, callback) {
-        var url = this.settings.searchurl.replace("QUERY", query).replace("APPID", this.settings.id).replace("APPCODE", this.settings.code) ;
+        var url = this.settings.searchurl.replace("QUERY", query).replace("APPID", this.settings.id).replace("APPCODE", this.settings.code).replace("APIKEY", this.settings.apikey) ;
         fetchit(url, this.settings.searchoptions, callback, this.handleSearchResponse)
     }
 
     geocode(lat, lon, callback) {
-        var url = this.settings.geocodeurl.replace("LON",lon).replace("LAT",lat).replace("APPID", this.settings.id).replace("APPCODE", this.settings.code) ;
+        var url = this.settings.geocodeurl.replace("LON",lon).replace("LAT",lat).replace("APPID", this.settings.id).replace("APPCODE", this.settings.code).replace("APIKEY", this.settings.apikey) ;
         fetchit(url, this.settings.geocodeoptions, callback, this.handleGeocodeResponse) ;
     }
 
     handleSearchResponse(results, callback) {
 
-        if (results.Response && results.Response.View && results.Response.View[0] &&
-            results.Response.View[0].Result && results.Response.View[0].Result[0] &&
-            results.Response.View[0].Result[0].Location && results.Response.View[0].Result[0].Location.Address) {
+        if (results.items && results.items[0] &&
+            results.items[0].address && results.items[0].position) {
 
-            var location = results.Response.View[0].Result[0].Location ;
+            var location = results.items[0] ;
             callback( {
                          error: false,
                          status: 'OK',
-                         placeid: location.LocationId || '',
-                         lat: location.DisplayPosition.Latitude || '0',
-                         lon: location.DisplayPosition.Longitude || '0',
-                         name: location.Address.Label || 'Unknown',
-                         road: location.Address.Street || '',
-                         number: location.Address.HouseNumber || '',
-                         postcode: location.Address.PostalCode || '',
-                         city: location.Address.City || '',
-                         state: location.Address.County || location.Address.District || location.Address.State || '',
-                         country: location.Address.Country || ''
+                         errormessage: 'OK',
+                         placeid: location.id || '',
+                         lat: location.position.lat || '0',
+                         lon: location.position.lon || '0',
+                         name: location.address.Label || 'Unknown',
+                         road: location.address.street || '',
+                         number: location.address.houseNumber || '',
+                         postcode: location.address.postalCode || '',
+                         city: location.address.city || '',
+                         state: location.address.county || location.address.district || location.address.state || '',
+                         country: location.address.country || '',
+                         country_code: location.address.countryCode || ''
             }) ;
         } else {
             callback( {
                          error: true,
-                         status: 'FAILED'
+                         status: 'FAILED',
+                         errormessage: (results.error || 'error') + " - " + (results.error_description || 'unknown')
             }) ;
         }
     }
 
     handleGeocodeResponse(results, callback) {
 
-        if (results.Response && results.Response.View && results.Response.View[0] &&
-            results.Response.View[0].Result && results.Response.View[0].Result[0] &&
-            results.Response.View[0].Result[0].Location && results.Response.View[0].Result[0].Location.Address) {
+        if (results.items && results.items[0] &&
+            results.items[0].position && results.items[0].address) {
 
-            var location = results.Response.View[0].Result[0].Location ;
+            var location = results.items[0] ;
             callback( {
                          error: false,
                          status: 'OK',
-                         placeid: location.LocationId || '',
-                         lat: location.DisplayPosition.Latitude || '0',
-                         lon: location.DisplayPosition.Longitude || '0',
-                         name: location.Address.Label || 'Unknown',
-                         road: location.Address.Street || '',
-                         number: location.Address.HouseNumber || '',
-                         postcode: location.Address.PostalCode || '',
-                         city: location.Address.City || '',
-                         state: location.Address.County || location.Address.District || location.Address.State || '',
-                         country: location.Address.Country || ''
+                         errormessage: 'OK',
+                         placeid: location.id || '',
+                         lat: location.position.lat || '0',
+                         lon: location.position.lon || '0',
+                         name: location.address.Label || 'Unknown',
+                         road: location.address.street || '',
+                         number: location.address.houseNumber || '',
+                         postcode: location.address.postalCode || '',
+                         city: location.address.city || '',
+                         state: location.address.county || location.address.district || location.address.state || '',
+                         country: location.address.country || '',
+                         country_code: location.address.countryCode || ''
             }) ;
         } else {
             callback( {
                         error: true,
-                        status: 'FAILED'
+                        status: 'FAILED',
+                        errormessage: (results.error || 'error') + " - " + (results.error_description || 'unknown')
             }) ;
         }
 
@@ -204,15 +215,15 @@ function fetchit(url, options, callback, decoderesponse) {
 
 class Geocode {
 
-    constructor(type, hereid, herecode) {
+    constructor(type, hereid, herecode, hereapikey) {
       this.osm = new OSM() ;
-      this.here = new HERE(hereid, herecode) ;
+      this.here = new HERE(hereid, herecode, hereapikey) ;
       this.optsearch = type ;
       this.optgeocode = type ;
     }
 
-    setkey(hereid, herecode) {
-        this.here.setkey(hereid, herecode) ;
+    setkey(hereid, herecode, hereapikey) {
+        this.here.setkey(hereid, herecode, hereapikey) ;
     }
 
     search(query, callback) {

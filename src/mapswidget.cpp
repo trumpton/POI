@@ -33,6 +33,7 @@ void MapsWidget::runJavaScript(QString command)
 void MapsWidget::initialise(QString url,
                             QString bingKeyData,
                             QString geocodeType, QString hereId, QString hereCode,
+                            QString hereApiKey,
                             int aerialTileZoom, QString aerialTileUrl,
                             int satelliteOverlayTileZoom, QString satelliteOverlayTileUrl,
                             int mapTileZoom, QString mapTileUrl,
@@ -46,6 +47,7 @@ void MapsWidget::initialise(QString url,
     cachedBingKey = bingKeyData ;
     cachedHereId = hereId ;
     cachedHereCode = hereCode ;
+    cachedHereApiKey = hereApiKey ;
 
     // Save the map tile parameters
     cachedAerialTileZoom = aerialTileZoom ;
@@ -120,7 +122,7 @@ void MapsWidget::jsinitialise4(bool ok)
                 QString::number(cachedTrailTileZoom) + ", \"" + cachedTrailTileUrl + "\");" ;
   runJavaScript(cmd);
 
-  cmd = "initialiseGeocoder(\"" + cachedGeocodeType + "\", \"" + cachedHereId + "\", \"" + cachedHereCode + "\");" ;
+  cmd = "initialiseGeocoder(\"" + cachedGeocodeType + "\", \"" + cachedHereId + "\", \"" + cachedHereCode + "\", \"" + cachedHereApiKey + "\");" ;
   runJavaScript(cmd);
 
   registerUuids(cachedWorkingCollectionUuid, cachedFileCollectionUuid, cachedTrackCollectionUuid);

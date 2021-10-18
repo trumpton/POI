@@ -565,9 +565,9 @@ function seekToMarker(uuid, requiredzoom) {
 //
 
 
-function initialiseGeocoder(type, hereid, herecode)
+function initialiseGeocoder(type, hereid, herecode, hereapikey)
 {
-    geocoder = new Geocode(type, hereid, herecode);
+    geocoder = new Geocode(type, hereid, herecode, hereapikey);
 }
 
 

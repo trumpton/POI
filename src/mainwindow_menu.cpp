@@ -12,7 +12,11 @@
 #include "easyexif/exif.h"
 #include "photoimportdialog.h"
 
-
+#include <QMessageBox>
+#include <QProgressDialog>
+#include <QFileDialog>
+#include <QDesktopServices>
+#include <QInputDialog>
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -838,17 +842,17 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
 void MainWindow::on_action_UnmountGarminDevice_triggered()
 {
     QString device1, device2 ;
-    QRegExp srch ;
+    QRegularExpression srch ;
+    QRegularExpressionMatch match ;
     srch.setPattern("^(/.*/.*/.*)/.+") ;
-    srch.setMinimal(true) ;
 
-    if (srch.indexIn(configuration->garminFolder())!=-1) {
-        QString cmd = QString("/usr/bin/umount ") + srch.cap(1) ;
+    if (configuration->garminFolder().indexOf(srch,0,&match)!=-1) {
+        QString cmd = QString("/usr/bin/umount ") + match.captured(1) ;
         system(cmd.toLatin1()) ;
     }
 
-    if (srch.indexIn(configuration->garminFromFolder())!=-1) {
-        QString cmd = QString("/usr/bin/umount ") + srch.cap(1) ;
+    if (configuration->garminFromFolder().indexOf(srch,0,&match)!=-1) {
+        QString cmd = QString("/usr/bin/umount ") + match.captured(1) ;
         system(cmd.toLatin1()) ;
     }
 

@@ -7,6 +7,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QMessageBox>
+
 // Format for QString::arg(double)
 #define dbl(n) arg(n,20,'g',15)
 

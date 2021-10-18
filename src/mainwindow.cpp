@@ -18,8 +18,10 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QDir>
-#include <QRegExp>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 #include <QStringList>
+#include <QFileDialog>
 #include "prompt.h"
 
 #define STAR  QChar(0x2605)
@@ -90,7 +92,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->action_ShowTrack->setChecked(false) ;
     ui->action_ShowActualDuration->setChecked(false) ;
 
-    refresh() ;
+    // Set flag so first tick can initialise
+    juststarted=true ;
 
     // Setup Timer
     timer.setSingleShot(false) ;
@@ -116,6 +119,12 @@ void MainWindow::tick()
     if (ui->menu_Export->isVisible()) {
         on_menuExport_aboutToShow() ;
     }
+
+    if (juststarted) {
+      refresh() ;
+      juststarted=false ;
+    }
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -231,28 +240,35 @@ bool MainWindow::refreshTracksPoi()
             PoiCollection track ;
             track.loadGpx(trackfolder + QString("/") + gpxfiles.at(i)) ;
 
-            // Create a New Waypoint entry, using the first waypoint, or the first track point
-            // (pre-requisit is that the fileCollection() is already sorted)
-            PoiEntry ent ;
+            // Only process non-empty gpx files
 
-            if (track.size()>0) {
+            if (track.size()>0 || track.trackSize()>0) {
+
+              // Create a New Waypoint entry, using the first waypoint, or the first track point
+              // (pre-requisit is that the fileCollection() is already sorted)
+
+              PoiEntry ent ;
+
+              if (track.size()>0) {
                 ent.copyFrom(track.at(0)) ;
-            } else {
+              } else {
                 ent.setLatLon(track.trackAt(0).lat(), track.trackAt(0).lon()) ;
+              }
+              ent.setUuid(track.uuid()) ;
+
+              QString name = track.formattedName(true, true, true, true, false, false) ;
+              ent.set(PoiEntry::EDITEDTITLE, name) ;
+              ent.setSequence(0) ;
+
+              QString typetxt ;
+              for (int i=track.rating(); i>0; i--) {
+                  typetxt = typetxt + QString("★") ;
+              }
+              ent.set(PoiEntry::EDITEDTYPE, typetxt) ;
+
+              tracks.add(ent) ;
+
             }
-            ent.setUuid(track.uuid()) ;
-
-            QString name = track.formattedName(true, true, true, true, false, false) ;
-            ent.set(PoiEntry::EDITEDTITLE, name) ;
-            ent.setSequence(0) ;
-
-            QString typetxt ;
-            for (int i=track.rating(); i>0; i--) {
-                typetxt = typetxt + QString("★") ;
-            }
-            ent.set(PoiEntry::EDITEDTYPE, typetxt) ;
-
-            tracks.add(ent) ;
 
         }
 
@@ -462,7 +478,7 @@ bool MainWindow::updateSearchFilter()
         QStringList filterEntries ;
 
         for (int i=0; i<fileCollection.size(); i++) {
-            QRegExp re("[^a-zA-Z0-9★]") ;
+            QRegularExpression re("[^a-zA-Z0-9★]") ;
             PoiEntry& file = fileCollection.at(i) ;
             QString type = file.get(PoiEntry::EDITEDTYPE) ;
             QStringList ents = type.replace(re, " ").toLower().split(" ") ;
@@ -513,6 +529,8 @@ bool MainWindow::updateSearchFilter()
         if (idx>=0) ui->comboBox_Filter->setCurrentIndex(idx) ;
 
         ui->comboBox_Filter->blockSignals(false) ;
+
+        return true ;
 }
 
 bool MainWindow::updateList(PoiCollection *collection, QListWidget *widget, QString filterText)

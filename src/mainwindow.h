@@ -199,6 +199,9 @@ private:
 
     // Timer
     QTimer timer ;
+
+    // Initialisation flag
+    bool juststarted ;
 };
 
 #endif // MAINWINDOW_H

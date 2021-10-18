@@ -1,13 +1,16 @@
 #include "poicollection.h"
 #include <QUuid>
 #include <QString>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QDateTime>
 #include <QDebug>
 #include <math.h>
 #include <QDir>
 #include <QFileInfo>
 #include <QTimeZone>
+#include <QList>
+
+
 
 #include "segmentchooser.h"
 
@@ -89,11 +92,13 @@ const QString& PoiEntry::get(PoiEntry::FieldType type) { return sFields[(int)typ
 
 void PoiEntry::setDate(QString date, int timezoneoffset) {
 
-    QRegExp re("(\\d\\d\\d\\d):(\\d\\d):(\\d\\d) (\\d\\d):(\\d\\d):(\\d\\d)") ;
-    if (re.exactMatch(date)) {
+    QRegularExpression re("(\\d\\d\\d\\d):(\\d\\d):(\\d\\d) (\\d\\d):(\\d\\d):(\\d\\d)") ;
+    QRegularExpressionMatch match ;
+    match = re.match(date) ;
+    if (match.hasMatch()) {
         // Handle '2018:08:30 15:52:14' Format
-        QDate qdate(re.cap(1).toInt(), re.cap(2).toInt(), re.cap(3).toInt()) ;
-        QTime qtime(re.cap(4).toInt(), re.cap(5).toInt(), re.cap(6).toInt()) ;
+        QDate qdate(match.captured(1).toInt(), match.captured(2).toInt(), match.captured(3).toInt()) ;
+        QTime qtime(match.captured(4).toInt(), match.captured(5).toInt(), match.captured(6).toInt()) ;
         tDate = QDateTime(qdate, qtime, Qt::UTC) ;
     } else {
         // Handle ISO Date Format
@@ -206,19 +211,22 @@ bool PoiEntry::importOv2(QFile& inputstream)
             QString door ;
             QString phone ;
 
-            QRegExp rxq("^(.*)>(.+)>(.+)") ;
-            if (rxq.indexIn(description)>=0) {
-                description=rxq.cap(1).trimmed() ;
-                phone=rxq.cap(2).trimmed() ;
+            QRegularExpressionMatch match ;
+
+            QRegularExpression rxq("^(.*)>(.+)>(.+)") ;
+            if (description.indexOf(rxq, 0, &match)>=0) {
+                description=match.captured(1).trimmed() ;
+                phone=match.captured(2).trimmed() ;
             }
-            QRegExp rxp("^(.*)>(.+)") ;
-            if (rxp.indexIn(description)>=0) {
-                description=rxp.cap(1).trimmed() ;
-                phone=rxp.cap(2).trimmed() ;
+            QRegularExpression rxp("^(.*)>(.+)") ;
+            if (description.indexOf(rxp, 0, &match)>=0) {
+                description=match.captured(1).trimmed() ;
+                phone=match.captured(2).trimmed() ;
             }
-            QRegExp rxn("^(.*)\\[(.+)\\]") ;
-            if (rxn.indexIn(description)>=0) {
-                door=rxn.cap(2).trimmed() ;
+
+            QRegularExpression rxn("^(.*)\\[(.+)\\]") ;
+            if (description.indexOf(rxn, 0, &match)>=0) {
+                door=match.captured(2).trimmed() ;
             }
 
             set(PoiEntry::EDITEDTITLE, description) ;
@@ -388,7 +396,7 @@ bool trackLessThan (TrackEntry &v1, TrackEntry &v2)
 
 void PoiCollection::sortBySequence()
 {
-    qSort(poiList.begin(), poiList.end(), poiLessThan) ;
+    std::sort(poiList.begin(), poiList.end(), poiLessThan) ;
 
     int seq = 0 ;
 
@@ -397,7 +405,7 @@ void PoiCollection::sortBySequence()
         seq+=2 ;
     }
 
-    qSort(trackList.begin(), trackList.end(), trackLessThan) ;
+    std::sort(trackList.begin(), trackList.end(), trackLessThan) ;
 
     for (int i=0; i<trackList.size(); i++) {
         trackList[i].setSequence(seq) ;
@@ -409,7 +417,7 @@ void PoiCollection::sortBySequence()
 
 void PoiCollection::reorderWaypointByDate()
 {
-    qSort(poiList.begin(), poiList.end(), poiDateLessThan) ;
+    std::sort(poiList.begin(), poiList.end(), poiDateLessThan) ;
 
     int seq = 0 ;
 
@@ -572,8 +580,18 @@ bool PoiCollection::loadGpx(QString filename)
 
     QDomDocument doc;
      QFile file(filename);
-     if (!file.open(QIODevice::ReadOnly) || !doc.setContent(&file))
+     if (!file.open(QIODevice::ReadOnly))
+         return false ;
+
+
+     QString errorStr;
+     int errorLine;
+     int errorColumn;
+
+     if (!doc.setContent(&file, false, &errorStr, &errorLine, &errorColumn)) {
+         qDebug() << QString("Error loading: ") << filename << QString(": ") << errorStr << QString("Line: ") << errorLine << QString("Column: ") << errorColumn;
          return false;
+     }
 
      QDomElement gpx = doc.firstChildElement("gpx") ;
      QDomNodeList wpt = gpx.elementsByTagName("wpt") ;
@@ -588,13 +606,13 @@ bool PoiCollection::loadGpx(QString filename)
          QDomText text = doc.createTextNode(sName) ;
          name.appendChild(text) ;
 
-         QDomElement uuidelement = metadataelement.firstChildElement("poix::uuid") ;
+         QDomElement uuidelement = metadataelement.firstChildElement("poix:uuid") ;
          if (uuidelement.isElement()) sUuid = uuidelement.text() ;
 
-         QDomElement ratingelement = metadataelement.firstChildElement("poix::rating") ;
+         QDomElement ratingelement = metadataelement.firstChildElement("poix:rating") ;
          if (ratingelement.isElement()) iRating = ratingelement.text().toInt() ;
 
-         QDomElement nameuserelement = metadataelement.firstChildElement("poix::name") ;
+         QDomElement nameuserelement = metadataelement.firstChildElement("poix:name") ;
          if (nameuserelement.isElement()) sName = nameuserelement.text() ;
 
          if (sName.isEmpty()) {
@@ -633,51 +651,51 @@ bool PoiCollection::loadGpx(QString filename)
          QDomNode ext = n.firstChildElement("extension") ;
          if (!ext.isNull()) {
 
-            QDomNode poiext = ext.firstChildElement("poix::WaypointExtension") ;
+            QDomNode poiext = ext.firstChildElement("poix:WaypointExtension") ;
 
             if (!poiext.isNull()) {
 
                 // Set waypoint UUID
-                QDomElement extensionuuid = poiext.firstChildElement("poix::Uuid") ;
+                QDomElement extensionuuid = poiext.firstChildElement("poix:Uuid") ;
                 if (extensionuuid.isElement()) {
                     ent.setUuid(extensionuuid.text()) ;
                 }
 
                 // Set waypoint field entries
-                extractXmlData(poiext, "poix::EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
-                extractXmlData(poiext, "poix::EditedDoorNumber", PoiEntry::EDITEDDOOR, ent) ;
-                extractXmlData(poiext, "poix::EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
-                extractXmlData(poiext, "poix::EditedCity", PoiEntry::EDITEDCITY, ent) ;
-                extractXmlData(poiext, "poix::EditedState", PoiEntry::EDITEDSTATE, ent) ;
-                extractXmlData(poiext, "poix::EditedPostcode", PoiEntry::EDITEDPOSTCODE, ent) ;
-                extractXmlData(poiext, "poix::EditedCountry", PoiEntry::EDITEDCOUNTRY, ent) ;
-                extractXmlData(poiext, "poix::GeoAddress", PoiEntry::GEOSTREET, ent) ;
-                extractXmlData(poiext, "poix::GeoDoorNumber", PoiEntry::GEODOOR, ent) ;
-                extractXmlData(poiext, "poix::GeoStreet", PoiEntry::GEOSTREET, ent) ;
-                extractXmlData(poiext, "poix::GeoCity", PoiEntry::GEOCITY, ent) ;
-                extractXmlData(poiext, "poix::GeoState", PoiEntry::GEOSTATE, ent) ;
-                extractXmlData(poiext, "poix::GeoPostcode", PoiEntry::GEOPOSTCODE, ent) ;
-                extractXmlData(poiext, "poix::GeoCountry", PoiEntry::GEOCOUNTRY, ent) ;
-                extractXmlData(poiext, "poix::PhoneNumber1", PoiEntry::EDITEDPHONE1, ent) ;
-                extractXmlData(poiext, "poix::PhoneNumber2", PoiEntry::EDITEDPHONE2, ent) ;
-                extractXmlData(poiext, "poix::Email", PoiEntry::EDITEDEMAIL, ent) ;
-                extractXmlData(poiext, "poix::URL", PoiEntry::EDITEDURL, ent) ;
-                extractXmlData(poiext, "poix::Geocoded", PoiEntry::GEOCODED, ent) ;
-                extractXmlData(poiext, "poix::Date", PoiEntry::DATETIME, ent) ;
+                extractXmlData(poiext, "poix:EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
+                extractXmlData(poiext, "poix:EditedDoorNumber", PoiEntry::EDITEDDOOR, ent) ;
+                extractXmlData(poiext, "poix:EditedStreet", PoiEntry::EDITEDSTREET, ent) ;
+                extractXmlData(poiext, "poix:EditedCity", PoiEntry::EDITEDCITY, ent) ;
+                extractXmlData(poiext, "poix:EditedState", PoiEntry::EDITEDSTATE, ent) ;
+                extractXmlData(poiext, "poix:EditedPostcode", PoiEntry::EDITEDPOSTCODE, ent) ;
+                extractXmlData(poiext, "poix:EditedCountry", PoiEntry::EDITEDCOUNTRY, ent) ;
+                extractXmlData(poiext, "poix:GeoAddress", PoiEntry::GEOSTREET, ent) ;
+                extractXmlData(poiext, "poix:GeoDoorNumber", PoiEntry::GEODOOR, ent) ;
+                extractXmlData(poiext, "poix:GeoStreet", PoiEntry::GEOSTREET, ent) ;
+                extractXmlData(poiext, "poix:GeoCity", PoiEntry::GEOCITY, ent) ;
+                extractXmlData(poiext, "poix:GeoState", PoiEntry::GEOSTATE, ent) ;
+                extractXmlData(poiext, "poix:GeoPostcode", PoiEntry::GEOPOSTCODE, ent) ;
+                extractXmlData(poiext, "poix:GeoCountry", PoiEntry::GEOCOUNTRY, ent) ;
+                extractXmlData(poiext, "poix:PhoneNumber1", PoiEntry::EDITEDPHONE1, ent) ;
+                extractXmlData(poiext, "poix:PhoneNumber2", PoiEntry::EDITEDPHONE2, ent) ;
+                extractXmlData(poiext, "poix:Email", PoiEntry::EDITEDEMAIL, ent) ;
+                extractXmlData(poiext, "poix:URL", PoiEntry::EDITEDURL, ent) ;
+                extractXmlData(poiext, "poix:Geocoded", PoiEntry::GEOCODED, ent) ;
+                extractXmlData(poiext, "poix:Date", PoiEntry::DATETIME, ent) ;
 
                 // Extract date/time
                 QString date = ent.get(PoiEntry::DATETIME) ;
                 ent.setDate(date) ;
 
                 // Ensure photo path is absolute
-                extractXmlData(poiext, "poix::PhotoFilename", PoiEntry::PHOTOFILENAME, ent) ;
+                extractXmlData(poiext, "poix:PhotoFilename", PoiEntry::PHOTOFILENAME, ent) ;
                 QString photopath = gpxDir.cleanPath(gpxDir.absoluteFilePath(ent.get(PoiEntry::PHOTOFILENAME)));
                 ent.set(PoiEntry::PHOTOFILENAME, photopath) ;
 
-                extractXmlData(poiext, "poix::PhotoLat", PoiEntry::PHOTOLAT, ent) ;
-                extractXmlData(poiext, "poix::PhotoLon", PoiEntry::PHOTOLON, ent) ;
-                extractXmlData(poiext, "poix::PhotoElevation", PoiEntry::PHOTOELEVATION, ent) ;
-                extractXmlData(poiext, "poix::PhotoDate", PoiEntry::PHOTODATE, ent) ;
+                extractXmlData(poiext, "poix:PhotoLat", PoiEntry::PHOTOLAT, ent) ;
+                extractXmlData(poiext, "poix:PhotoLon", PoiEntry::PHOTOLON, ent) ;
+                extractXmlData(poiext, "poix:PhotoElevation", PoiEntry::PHOTOELEVATION, ent) ;
+                extractXmlData(poiext, "poix:PhotoDate", PoiEntry::PHOTODATE, ent) ;
                 QString photo = ent.get(PoiEntry::PHOTOFILENAME) ;
                 if (!photo.isEmpty()) {
                     QImage img ;
@@ -691,13 +709,13 @@ bool PoiCollection::loadGpx(QString filename)
                 // Note import of phone numbers / email addresses and urls not supported
                 QDomNode wptext = ext.firstChildElement("gpxx:WaypointExtension") ;
                 if (!wptext.isNull()) {
-                    QDomNode address = wptext.firstChildElement("gpxx::Address") ;
+                    QDomNode address = wptext.firstChildElement("gpxx:Address") ;
                     if (!address.isNull()) {
-                        extractXmlData(address, "gpxx::StreetAddress", PoiEntry::EDITEDSTREET, ent) ;
-                        extractXmlData(address, "gpxx::City", PoiEntry::EDITEDCITY, ent) ;
-                        extractXmlData(address, "gpxx::State", PoiEntry::EDITEDSTATE, ent) ;
-                        extractXmlData(address, "gpxx::Country", PoiEntry::EDITEDCOUNTRY, ent) ;
-                        extractXmlData(address, "gpxx::PostalCode", PoiEntry::EDITEDPOSTCODE, ent) ;
+                        extractXmlData(address, "gpxx:StreetAddress", PoiEntry::EDITEDSTREET, ent) ;
+                        extractXmlData(address, "gpxx:City", PoiEntry::EDITEDCITY, ent) ;
+                        extractXmlData(address, "gpxx:State", PoiEntry::EDITEDSTATE, ent) ;
+                        extractXmlData(address, "gpxx:Country", PoiEntry::EDITEDCOUNTRY, ent) ;
+                        extractXmlData(address, "gpxx:PostalCode", PoiEntry::EDITEDPOSTCODE, ent) ;
                     }
                 }
             }
@@ -844,6 +862,7 @@ bool PoiCollection::saveGpx(QString filename)
     bool success=true ;
 
     QDomDocument doc;
+
      QFile file(sFilename);
      if( !file.open( QIODevice::WriteOnly | QIODevice::Text ) )
          return false;
@@ -870,18 +889,18 @@ bool PoiCollection::saveGpx(QString filename)
      metadata.appendChild(name) ;
 
      // Store the user-entered name
-     QDomElement poixname = doc.createElement("poix::name") ;
+     QDomElement poixname = doc.createElement("poix:name") ;
      QDomText poixtext = doc.createTextNode(sName) ;
      poixname.appendChild(poixtext) ;
      metadata.appendChild(poixname) ;
 
      // Store the collection uuid
-     QDomElement extensionuuid = doc.createElement("poix::uuid") ;
+     QDomElement extensionuuid = doc.createElement("poix:uuid") ;
      extensionuuid.appendChild(doc.createTextNode(sUuid)) ;
      metadata.appendChild(extensionuuid) ;
 
      // Store the rating
-     QDomElement extensionrating = doc.createElement("poix::rating") ;
+     QDomElement extensionrating = doc.createElement("poix:rating") ;
      extensionrating.appendChild(doc.createTextNode(QString::number(iRating))) ;
      metadata.appendChild(extensionrating) ;
 
@@ -893,9 +912,9 @@ bool PoiCollection::saveGpx(QString filename)
 
         QDomElement wpt = doc.createElement("wpt") ;
         QDomElement extension = doc.createElement("extension") ;
-        QDomElement wptext = doc.createElement("gpxx::WaypointExtension") ;
-        QDomElement addr = doc.createElement("gpxx::Address") ;
-        QDomElement poiext = doc.createElement("poix::WaypointExtension") ;
+        QDomElement wptext = doc.createElement("gpxx:WaypointExtension") ;
+        QDomElement addr = doc.createElement("gpxx:Address") ;
+        QDomElement poiext = doc.createElement("poix:WaypointExtension") ;
 
         // Attach nodes in hierarchy
         gpx.appendChild(wpt) ;
@@ -908,10 +927,10 @@ bool PoiCollection::saveGpx(QString filename)
         wpt.setAttribute("lat", QString::number(ent.lat(), 'f', 16)) ;
         wpt.setAttribute("lon", QString::number(ent.lon(), 'f', 16)) ;
 
-        storeXmlData(doc, PoiEntry::EDITEDPHONE1, ent, wptext, "gpxx::PhoneNumber", "Category", "Phone") ;
-        storeXmlData(doc, PoiEntry::EDITEDPHONE2, ent, wptext, "gpxx::PhoneNumber", "Category", "Phone2") ;
-        storeXmlData(doc, PoiEntry::EDITEDEMAIL, ent, wptext, "gpxx::PhoneNumber", "Category", "Email") ;
-        storeXmlData(doc, PoiEntry::EDITEDURL, ent, wptext, "gpxx::PhoneNumber", "Category", "URL") ;
+        storeXmlData(doc, PoiEntry::EDITEDPHONE1, ent, wptext, "gpxx:PhoneNumber", "Category", "Phone") ;
+        storeXmlData(doc, PoiEntry::EDITEDPHONE2, ent, wptext, "gpxx:PhoneNumber", "Category", "Phone2") ;
+        storeXmlData(doc, PoiEntry::EDITEDEMAIL, ent, wptext, "gpxx:PhoneNumber", "Category", "Email") ;
+        storeXmlData(doc, PoiEntry::EDITEDURL, ent, wptext, "gpxx:PhoneNumber", "Category", "URL") ;
 
         // Populate nodes
         storeXmlData(doc, PoiEntry::GEOELEVATION, ent, wpt, "ele") ;
@@ -923,40 +942,40 @@ bool PoiCollection::saveGpx(QString filename)
         storeXmlData(doc, PoiEntry::EDITEDTYPE, ent, wpt, "type") ;
 
         // Append UUID
-        QDomElement waypointuuid = doc.createElement("poix::Uuid") ;
+        QDomElement waypointuuid = doc.createElement("poix:Uuid") ;
         waypointuuid.appendChild(doc.createTextNode(ent.uuid())) ;
         poiext.appendChild(waypointuuid) ;
 
-        storeXmlData(doc, PoiEntry::GEODOOR, ent, poiext, "poix::GeoDoorNumber") ;
-        storeXmlData(doc, PoiEntry::GEOSTREET, ent, poiext, "poix::GeoStreet") ;
-        storeXmlData(doc, PoiEntry::GEOCITY, ent, poiext, "poix::GeoCity") ;
-        storeXmlData(doc, PoiEntry::GEOSTATE, ent, poiext, "poix::GeoState") ;
-        storeXmlData(doc, PoiEntry::GEOPOSTCODE, ent, poiext, "poix::GeoPostcode") ;
-        storeXmlData(doc, PoiEntry::GEOCOUNTRY, ent, poiext, "poix::GeoCountry") ;
-        storeXmlData(doc, PoiEntry::EDITEDDOOR, ent, poiext, "poix::EditedDoorNumber") ;
-        storeXmlData(doc, PoiEntry::EDITEDSTREET, ent, poiext, "poix::EditedStreet") ;
-        storeXmlData(doc, PoiEntry::EDITEDCITY, ent, poiext, "poix::EditedCity") ;
-        storeXmlData(doc, PoiEntry::EDITEDSTATE, ent, poiext, "poix::EditedState") ;
-        storeXmlData(doc, PoiEntry::EDITEDPOSTCODE, ent, poiext, "poix::EditedPostcode") ;
-        storeXmlData(doc, PoiEntry::EDITEDCOUNTRY, ent, poiext, "poix::EditedCountry") ;
-        storeXmlData(doc, PoiEntry::EDITEDPHONE1, ent, poiext, "poix::PhoneNumber1") ;
-        storeXmlData(doc, PoiEntry::EDITEDPHONE2, ent, poiext, "poix::PhoneNumber2") ;
-        storeXmlData(doc, PoiEntry::EDITEDEMAIL, ent, poiext, "poix::Email") ;
-        storeXmlData(doc, PoiEntry::EDITEDURL, ent, poiext, "poix::URL") ;
-        storeXmlData(doc, PoiEntry::GEOCODED, ent, poiext, "poix::Geocoded") ;
-        storeXmlData(doc, PoiEntry::DATETIME, ent, poiext, "poix::Date") ;
+        storeXmlData(doc, PoiEntry::GEODOOR, ent, poiext, "poix:GeoDoorNumber") ;
+        storeXmlData(doc, PoiEntry::GEOSTREET, ent, poiext, "poix:GeoStreet") ;
+        storeXmlData(doc, PoiEntry::GEOCITY, ent, poiext, "poix:GeoCity") ;
+        storeXmlData(doc, PoiEntry::GEOSTATE, ent, poiext, "poix:GeoState") ;
+        storeXmlData(doc, PoiEntry::GEOPOSTCODE, ent, poiext, "poix:GeoPostcode") ;
+        storeXmlData(doc, PoiEntry::GEOCOUNTRY, ent, poiext, "poix:GeoCountry") ;
+        storeXmlData(doc, PoiEntry::EDITEDDOOR, ent, poiext, "poix:EditedDoorNumber") ;
+        storeXmlData(doc, PoiEntry::EDITEDSTREET, ent, poiext, "poix:EditedStreet") ;
+        storeXmlData(doc, PoiEntry::EDITEDCITY, ent, poiext, "poix:EditedCity") ;
+        storeXmlData(doc, PoiEntry::EDITEDSTATE, ent, poiext, "poix:EditedState") ;
+        storeXmlData(doc, PoiEntry::EDITEDPOSTCODE, ent, poiext, "poix:EditedPostcode") ;
+        storeXmlData(doc, PoiEntry::EDITEDCOUNTRY, ent, poiext, "poix:EditedCountry") ;
+        storeXmlData(doc, PoiEntry::EDITEDPHONE1, ent, poiext, "poix:PhoneNumber1") ;
+        storeXmlData(doc, PoiEntry::EDITEDPHONE2, ent, poiext, "poix:PhoneNumber2") ;
+        storeXmlData(doc, PoiEntry::EDITEDEMAIL, ent, poiext, "poix:Email") ;
+        storeXmlData(doc, PoiEntry::EDITEDURL, ent, poiext, "poix:URL") ;
+        storeXmlData(doc, PoiEntry::GEOCODED, ent, poiext, "poix:Geocoded") ;
+        storeXmlData(doc, PoiEntry::DATETIME, ent, poiext, "poix:Date") ;
 
         if (!ent.get(PoiEntry::PHOTOFILENAME).isEmpty()) {
 
             // Ensure photo filename is relative to gpx save file
             QString photofilename = ent.get(PoiEntry::PHOTOFILENAME) ;
             photofilename = savedir.relativeFilePath(photofilename) ;
-            storeXmlData(doc, photofilename, poiext, "poix::PhotoFilename") ;
+            storeXmlData(doc, photofilename, poiext, "poix:PhotoFilename") ;
 
-            storeXmlData(doc, PoiEntry::PHOTOLAT, ent, poiext, "poix::PhotoLat") ;
-            storeXmlData(doc, PoiEntry::PHOTOLON, ent, poiext, "poix::PhotoLon") ;
-            storeXmlData(doc, PoiEntry::PHOTOELEVATION, ent, poiext, "poix::PhotoElevation") ;
-            storeXmlData(doc, PoiEntry::PHOTODATE, ent, poiext, "poix::PhotoDate") ;
+            storeXmlData(doc, PoiEntry::PHOTOLAT, ent, poiext, "poix:PhotoLat") ;
+            storeXmlData(doc, PoiEntry::PHOTOLON, ent, poiext, "poix:PhotoLon") ;
+            storeXmlData(doc, PoiEntry::PHOTOELEVATION, ent, poiext, "poix:PhotoElevation") ;
+            storeXmlData(doc, PoiEntry::PHOTODATE, ent, poiext, "poix:PhotoDate") ;
         }
 
         QString door, street, fullstreet, city, state, country, postcode ;
@@ -1002,11 +1021,11 @@ bool PoiCollection::saveGpx(QString filename)
         } else {
             fullstreet = door + " " + street ;
         }
-        storeXmlData(doc, fullstreet, addr, "gpxx::StreetAddress") ;
-        storeXmlData(doc, city, addr, "gpxx::City") ;
-        storeXmlData(doc, state, addr, "gpxx::State") ;
-        storeXmlData(doc, country, addr, "gpxx::Country") ;
-        storeXmlData(doc, postcode, addr, "gpxx::PostalCode") ;
+        storeXmlData(doc, fullstreet, addr, "gpxx:StreetAddress") ;
+        storeXmlData(doc, city, addr, "gpxx:City") ;
+        storeXmlData(doc, state, addr, "gpxx:State") ;
+        storeXmlData(doc, country, addr, "gpxx:Country") ;
+        storeXmlData(doc, postcode, addr, "gpxx:PostalCode") ;
 
         ent.markAsClean();
 
@@ -1053,6 +1072,9 @@ bool PoiCollection::saveGpx(QString filename)
 
 
      doc.appendChild(gpx) ;
+
+     QDomNode xmlnode( doc.createProcessingInstruction( "xml", "version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\""));
+     doc.insertBefore( xmlnode, doc.firstChild() );
 
      QTextStream stream( &file );
      QString str = doc.toString() ;

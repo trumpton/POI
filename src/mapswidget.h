@@ -26,7 +26,7 @@ private:
 signals:
     void mapMoved(double lat, double lon, int zoom) ;
     void markerMoved(const QString& uuid, const QString& collectionuuid, const double lat, const double lon) ;
-    void markerGeocoded(const QString& uuid, const QString& collectionuuid, const QString& formattedaddress, QString &door, QString &street, QString& town, QString& state, QString& country, QString& postcode) ;
+    void markerGeocoded(const QString& uuid, const QString& collectionuuid, const QString& formattedaddress, QString &door, QString &street, QString& town, QString& state, QString& country, QString& countrycode, QString& postcode) ;
     void geocodeFailed(const QString& error) ;
     void markerSelected(const QString& uuid, const QString& collectionuuid) ;
     void searchResultsReady(const double lat, const double lon, const QString& address, const QString& phone) ;
@@ -37,7 +37,7 @@ public slots:
     void jsinitialise4(bool ok) ;
     void jsmarkerSelected(QString uuid, QString collectionuuid) ;
     void jsmarkerMoved(QString uuid, QString collectionuuid, double lat, double lon) ;
-    void jsmarkerGeocoded(QString uuid, QString collectionuuid, QString address, QString door, QString street, QString town, QString state, QString country, QString postcode) ;
+    void jsmarkerGeocoded(QString uuid, QString collectionuuid, QString address, QString door, QString street, QString town, QString state, QString country, QString countrycode, QString postcode) ;
     void jsGeocodeFailed(QString error) ;
     void jsSearchResultsReady(QString placeid, double lat, double lon, QString address, QString phone) ;
     void jsmapMoved(double lat, double lon, int zoom, double tllat, double tllon, double brlat, double brlon) ;

@@ -402,6 +402,9 @@ function setMarker(uuid, collectionuuid, lat, lon, address, sequence, drop) {
     marker.uuid = uuid;
     marker.collectionuuid = collectionuuid;
     marker.sequence = sequence;
+    marker.coords = [] ;
+    marker.coords[0] = lon ;
+    marker.coords[1] = lat ;
 
     // Add and redraw
     markers.push(marker);
@@ -519,12 +522,23 @@ function handleMapMoved(evt) {
 
 function handleMarkerMoved(marker) {
     if (typeof OpenStreetMapsWidget !== 'undefined') {
-        console.log("Marker " + marker.uuid + " moved");
         var coords = marker.getGeometry().getFirstCoordinate();
         coords = ol.proj.transform(coords, 'EPSG:3857', 'EPSG:4326');
         var lon = coords[0];
         var lat = coords[1];
-        OpenStreetMapsWidget.jsmarkerMoved(marker.uuid, marker.collectionuuid, lat, lon);
+        // Callback iff marker has actually moved
+        var distance = ol.sphere.getDistance(coords, marker.coords) ;
+        if (distance>0.000001) {
+            // Marker moved more than 1um
+            console.log("Marker " + marker.uuid + " moved");
+            marker.lat = lat ;
+            marker.lon = lon ;
+            OpenStreetMapsWidget.jsmarkerMoved(marker.uuid, marker.collectionuuid, lat, lon);
+        } else {
+            console.log("Marker " + marker.uuid + " 'moved' < 2m");
+            selectFeature(marker); // Select with miniscule drag does not show as select
+            OpenStreetMapsWidget.jsmarkerSelected(marker.uuid, marker.collectionuuid);
+        }
     }
 }
 
@@ -603,8 +617,9 @@ function handleGeocoderResults(marker, results) {
         var city = results.city;
         var state = results.state;
         var country = results.country;
+        var countrycode = results.countrycode ;
         var postcode = results.postcode;
-        OpenStreetMapsWidget.jsmarkerGeocoded(marker.uuid, marker.collectionuuid, name, door, street, city, state, country, postcode);
+        OpenStreetMapsWidget.jsmarkerGeocoded(marker.uuid, marker.collectionuuid, name, door, street, city, state, country, countrycode, postcode);
     }
 }
 

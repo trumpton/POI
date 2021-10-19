@@ -283,9 +283,9 @@ void MapsWidget::geocodeMarker(QString uuid, QString collectionuuid, bool forceg
     runJavaScript(str) ;
 }
 
-void MapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode)
+void MapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString countrycode, QString postcode)
 {
-    QString str = QString("jsmarkerGeocoded(\"%1\",\"%2\",\"%3\",\"%4\",\"%5\",\"%6\",\"%7\",\"%8\",\"%9\")")
+    QString str = QString("jsmarkerGeocoded(\"%1\",\"%2\",\"%3\",\"%4\",\"%5\",\"%6\",\"%7\",\"%8\",\"%9\",\"%10\")")
             .arg(uuid)
             .arg(collectionuuid)
             .arg(formattedaddress)
@@ -294,9 +294,10 @@ void MapsWidget::jsmarkerGeocoded(QString uuid, QString collectionuuid, QString 
             .arg(town)
             .arg(state)
             .arg(country)
+            .arg(countrycode)
             .arg(postcode) ;
     qDebug() << "MapsWidget" << str ;
-    emit markerGeocoded(uuid, collectionuuid, formattedaddress, door, street, town, state, country, postcode) ;
+    emit markerGeocoded(uuid, collectionuuid, formattedaddress, door, street, town, state, country, countrycode, postcode) ;
 }
 
 void MapsWidget::jsGeocodeFailed(QString error)

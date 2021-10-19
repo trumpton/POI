@@ -32,7 +32,7 @@ private slots:
     // Called whenever a marker has been modified or selected on the map
     void mapCallbackMarkerMoved(QString uuid, QString collectionUuid, double lat, double lon) ;
     void mapCallbackMarkerSelected(QString uuid, QString collectionUuid) ;
-    void mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode) ;
+    void mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString countryCode, QString postcode) ;
 
     // Called when the map has been moved
     void mapCallbackMapMoved(double lat, double lon, int zoom) ;

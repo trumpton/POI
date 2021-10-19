@@ -50,6 +50,7 @@ public:
         GEOSTATE,
         GEOPOSTCODE,
         GEOCOUNTRY,
+        GEOCOUNTRYCODE,
 
         // Date / TIme
         DATETIME,
@@ -88,6 +89,8 @@ public:
     // UUID, used to uniquely identify the POI
     void setUuid(QString uuid) ;
     const QString& uuid() ;
+
+    double distanceFrom(PoiEntry &other) ;
 
     // POI Information
     void set(FieldType type, QString data) ;

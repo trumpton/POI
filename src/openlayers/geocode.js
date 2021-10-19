@@ -49,7 +49,7 @@ class OSM {
                                 results[0].address.county || results[0].address.state || '' :
                                 results[0].address.state || results[0].address.county || '',
                      country: results[0].address.country || '',
-                     country_code: results[0].address.country_code || ''
+                     countrycode: results[0].address.country_code || ''
             }) ;
         } else {
             callback( {
@@ -78,7 +78,7 @@ class OSM {
                                     results.address.county || results.address.state || '' :
                                     results.address.state || results.address.county || '',
                          country: results.address.country || '',
-                         contry_code: results.address.country_code || ''
+                         contrycode: results.address.country_code || ''
             }) ;
         } else {
             callback( {
@@ -145,8 +145,8 @@ class HERE {
                          postcode: location.address.postalCode || '',
                          city: location.address.city || '',
                          state: location.address.county || location.address.district || location.address.state || '',
-                         country: location.address.country || '',
-                         country_code: location.address.countryCode || ''
+                         country: location.address.countryName || '',
+                         countrycode: location.address.countryCode || ''
             }) ;
         } else {
             callback( {
@@ -176,8 +176,8 @@ class HERE {
                          postcode: location.address.postalCode || '',
                          city: location.address.city || '',
                          state: location.address.county || location.address.district || location.address.state || '',
-                         country: location.address.country || '',
-                         country_code: location.address.countryCode || ''
+                         country: location.address.countryName || '',
+                         countrycode: location.address.countryCode || ''
             }) ;
         } else {
             callback( {

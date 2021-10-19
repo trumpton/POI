@@ -70,12 +70,18 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
 
     PoiEntry& pe = findEntryByUuid(uuid, collectionUuid) ;
     if (pe.isValid()) {
+        PoiEntry newpos ;
+        newpos.setLatLon(lat, lon) ;
+        double distance = newpos.distanceFrom(pe) ;
         undo.pushPoiEntry(pe) ;
         pe.setLatLon(lat, lon) ;
         pe.set(PoiEntry::GEOCODED, "no") ;
         refresh(true) ;
-        ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
-    }
+        if (distance>1) {
+          // Geocode if waypoint marker moved by more than 1m
+          ui->mapWebView->geocodeMarker(uuid, collectionUuid, true);
+        }
+      }
 
     TrackEntry &te = findTrackEntryByUuid(uuid, collectionUuid) ;
     if (te.isValid()) {
@@ -102,7 +108,7 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
     }
 }
 
-void MainWindow::mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString postcode)
+void MainWindow::mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid, QString formattedaddress, QString door, QString street, QString town, QString state, QString country, QString countrycode, QString postcode)
 {
     QString str = QString("mapCallbackMarkerGeocoded(\"%1\",\"%2\",\"%3\",...)").arg(uuid).arg(collectionUuid).arg(formattedaddress) ;
     qDebug() << "MainWindow::" << str ;
@@ -116,6 +122,7 @@ void MainWindow::mapCallbackMarkerGeocoded(QString uuid, QString collectionUuid,
         pe.set(PoiEntry::GEOCITY, town) ;
         pe.set(PoiEntry::GEOSTATE, state) ;
         pe.set(PoiEntry::GEOCOUNTRY, country) ;
+        pe.set(PoiEntry::GEOCOUNTRYCODE, countrycode) ;
         pe.set(PoiEntry::GEOPOSTCODE, postcode) ;
         pe.set(PoiEntry::GEOCODED, "yes") ;
         refresh() ;

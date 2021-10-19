@@ -88,6 +88,11 @@ void PoiEntry::set(PoiEntry::FieldType type, QString data)
     }
 }
 
+double PoiEntry::distanceFrom(PoiEntry &other)
+{
+    return _distanceFrom(dLat, dLon, other.lat(), other.lon()) ;
+}
+
 const QString& PoiEntry::get(PoiEntry::FieldType type) { return sFields[(int)type] ; }
 
 void PoiEntry::setDate(QString date, int timezoneoffset) {
@@ -676,6 +681,7 @@ bool PoiCollection::loadGpx(QString filename)
                 extractXmlData(poiext, "poix:GeoState", PoiEntry::GEOSTATE, ent) ;
                 extractXmlData(poiext, "poix:GeoPostcode", PoiEntry::GEOPOSTCODE, ent) ;
                 extractXmlData(poiext, "poix:GeoCountry", PoiEntry::GEOCOUNTRY, ent) ;
+                extractXmlData(poiext, "poix:GeoCountryCode", PoiEntry::GEOCOUNTRYCODE, ent) ;
                 extractXmlData(poiext, "poix:PhoneNumber1", PoiEntry::EDITEDPHONE1, ent) ;
                 extractXmlData(poiext, "poix:PhoneNumber2", PoiEntry::EDITEDPHONE2, ent) ;
                 extractXmlData(poiext, "poix:Email", PoiEntry::EDITEDEMAIL, ent) ;
@@ -952,6 +958,7 @@ bool PoiCollection::saveGpx(QString filename)
         storeXmlData(doc, PoiEntry::GEOSTATE, ent, poiext, "poix:GeoState") ;
         storeXmlData(doc, PoiEntry::GEOPOSTCODE, ent, poiext, "poix:GeoPostcode") ;
         storeXmlData(doc, PoiEntry::GEOCOUNTRY, ent, poiext, "poix:GeoCountry") ;
+        storeXmlData(doc, PoiEntry::GEOCOUNTRYCODE, ent, poiext, "poix:GeoCountryCode") ;
         storeXmlData(doc, PoiEntry::EDITEDDOOR, ent, poiext, "poix:EditedDoorNumber") ;
         storeXmlData(doc, PoiEntry::EDITEDSTREET, ent, poiext, "poix:EditedStreet") ;
         storeXmlData(doc, PoiEntry::EDITEDCITY, ent, poiext, "poix:EditedCity") ;

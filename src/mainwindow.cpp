@@ -305,7 +305,10 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->comboBox_Rating->setCurrentIndex(fileCollection.rating());
 
         // Redraw the Map
-        if (refreshMarkers) refreshMap() ;
+        if (refreshMarkers) {
+            refreshMap() ;
+            refreshTrackDetails() ;
+        }
 
         // Centre and zoom
         if (centreOnMarker) updateMapSelection(zoom) ;
@@ -615,11 +618,16 @@ bool MainWindow::updateListSelection(PoiCollection *collection, QListWidget *wid
     return foundUuid ;
 }
 
+bool MainWindow::refreshTrackDetails()
+{
+  fileCollection.calculateTrack() ;
+  ui->label_distance->setText(QString::number(fileCollection.trackLength()/1000,'f',1)+QString(" km")) ;
+  ui->label_climb->setText(QString::number(fileCollection.heightGain(),'f',0)+QString(" m / ")+QString::number(fileCollection.heightLoss(),'f',0)+QString(" m")) ;
+  return true ;
+}
 
 bool MainWindow::refreshMap()
 {
-    ui->label_distance->setText(QString::number(fileCollection.trackLength()/1000,'f',1)+QString(" km")) ;
-    ui->label_climb->setText(QString::number(fileCollection.heightGain(),'f',0)+QString(" m / ")+QString::number(fileCollection.heightLoss(),'f',0)+QString(" m")) ;
 
     QString time ;
 

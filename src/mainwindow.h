@@ -174,6 +174,9 @@ private:
     // Refresh the Map
     bool refreshMap() ;
 
+    // Refresh track details (length / height etc.)
+    bool refreshTrackDetails() ;
+
     // Return currently selected UUID of the given list widget
     QString currentSelectionUuid(QListWidget *widget) ;
 

@@ -87,6 +87,7 @@ void MainWindow::mapCallbackMarkerMoved(QString uuid, QString collectionUuid, do
     if (te.isValid()) {
         undo.pushTrackEntry(te);
         te.setLatLon(lat, lon) ;
+        refreshTrackDetails() ;
         if (ui->actionSnap->isChecked()) {
             // Snap to POI
             double smallestdistance = 100 ;

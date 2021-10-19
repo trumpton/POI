@@ -273,6 +273,7 @@ public:
     // Formatted Name (inc rating, time etc)
     QString& formattedName(bool includerating, bool includeduration, bool includedistance, bool includeheight, bool asfilename, bool starasasterisk=false) ;
 
+    bool calculateTrack() ;
 
 private:
 
@@ -284,8 +285,6 @@ private:
     bool storeXmlData(QDomDocument& doc, QString text, QDomElement element, const char *tag, QString attribute = QString(""), QString attrval = QString("")) ;
 
     void updateLastEdited() ;
-
-    bool calculateTrack() ;
 };
 
 

@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QTimeZone>
 #include <QList>
+#include <QMessageBox>
 
 
 
@@ -329,6 +330,7 @@ int PoiCollection::rating()
 int PoiCollection::setRating(int rating)
 {
     iRating = rating ;
+    return iRating ;
 }
 
 void PoiCollection::updateLastEdited()
@@ -608,12 +610,13 @@ QString& PoiCollection::formattedName(bool includerating, bool includeduration, 
 }
 
 
-bool PoiCollection::loadGpx(QString filename)
+QString PoiCollection::loadGpx(QString filename)
 {
+    static QString msg ;
     int seq = 0 ;
 
     if (filename.isEmpty()) filename = sFilename ;
-    if (filename.isEmpty()) return false ;
+    if (filename.isEmpty()) return QString("") ;
     clear() ;
     sFilename = filename ;
 
@@ -624,17 +627,20 @@ bool PoiCollection::loadGpx(QString filename)
 
     QDomDocument doc;
      QFile file(filename);
-     if (!file.open(QIODevice::ReadOnly))
-         return false ;
-
+     if (!file.open(QIODevice::ReadOnly)) {
+         msg = QString("Enable to open file") ;
+         return msg ;
+     }
 
      QString errorStr;
      int errorLine;
      int errorColumn;
 
      if (!doc.setContent(&file, false, &errorStr, &errorLine, &errorColumn)) {
-         qDebug() << QString("Error loading: ") << filename << QString(": ") << errorStr << QString("Line: ") << errorLine << QString("Column: ") << errorColumn;
-         return false;
+         msg = QString("Error loading: ") + filename + QString(": ") + errorStr +
+                 QString(" - Line: ") + QString::number(errorLine) + QString(", Column: ") +
+                 QString::number(errorColumn) ;
+         return msg ;
      }
 
      QDomElement gpx = doc.firstChildElement("gpx") ;
@@ -872,7 +878,7 @@ bool PoiCollection::loadGpx(QString filename)
 
     calculateTrack() ;
     bListDirty=false ;
-    return success ;
+    return QString("") ;
 }
 
 //

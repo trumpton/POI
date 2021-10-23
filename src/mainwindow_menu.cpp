@@ -369,7 +369,9 @@ void MainWindow::on_action_ImportGpx_triggered()
 
     // Import the file
     PoiCollection gpx ;
-    bool cleanload = gpx.loadGpx(importName) ;
+    QString err = gpx.loadGpx(importName) ;
+    bool cleanload =  err.isEmpty();
+
     if (gpx.size()==0) {
 
         QMessageBox::information(this, "POI", "The import failed - no points of interest found", QMessageBox::Ok);
@@ -444,7 +446,9 @@ void MainWindow::on_action_ImportGpxToClipboard_triggered()
 
     // Import the file
     PoiCollection gpx ;
-    bool cleanload = gpx.loadGpx(importName) ;
+    QString err = gpx.loadGpx(importName) ;
+    bool cleanload =  err.isEmpty();
+
     if (gpx.size()==0) {
 
         QMessageBox::information(this, "POI", "The import failed - no points of interest found", QMessageBox::Ok);
@@ -474,8 +478,13 @@ void MainWindow::on_action_Open_triggered()
     on_action_New_triggered();
 
     if (!filename.isEmpty()) {
-        if (!fileCollection.loadGpx(filename)) {
+
+        QString err = fileCollection.loadGpx(filename) ;
+
+        if (!err.isEmpty()) {
             thisCollectionUuid.clear() ;
+            QMessageBox::information(this, "POI", err, QMessageBox::Ok);
+
         } else {
 
             thisCollectionUuid = fileCollection.uuid() ;

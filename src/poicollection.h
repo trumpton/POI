@@ -262,7 +262,7 @@ public:
     bool importOv2(QString filename) ;
 
     // Load and Save current PoiList
-    bool loadGpx(QString filename = QString("")) ;
+    QString loadGpx(QString filename = QString("")) ;
     bool saveGpx(QString filename = QString("")) ;
     bool saveOv2(QString filename = QString("")) ;
 

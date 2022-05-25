@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1209</width>
-    <height>695</height>
+    <height>729</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -410,11 +410,17 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QGroupBox" name="groupBox_Photo">
+           <widget class="QGroupBox" name="groupBox_PhotoOlc">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>200</width>
-              <height>180</height>
+              <width>220</width>
+              <height>200</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -424,33 +430,121 @@
              </size>
             </property>
             <property name="title">
-             <string>Photo</string>
+             <string/>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <property name="leftMargin">
+              <number>2</number>
+             </property>
+             <property name="topMargin">
+              <number>2</number>
+             </property>
+             <property name="rightMargin">
+              <number>2</number>
+             </property>
+             <property name="bottomMargin">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="labelImage">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <property name="leftMargin">
+                <number>2</number>
                </property>
-               <property name="minimumSize">
-                <size>
-                 <width>180</width>
-                 <height>130</height>
-                </size>
+               <property name="topMargin">
+                <number>0</number>
                </property>
-               <property name="maximumSize">
-                <size>
-                 <width>180</width>
-                 <height>130</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Loading Image ...</string>
-               </property>
-              </widget>
+               <item>
+                <widget class="QLabel" name="labelImage">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>150</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>180</width>
+                   <height>130</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Loading Image ...</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_16">
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_19">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>15</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>OLC: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_olc">
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>15</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_11">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>2</width>
+                     <height>2</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="button_copyOlc">
+                   <property name="minimumSize">
+                    <size>
+                     <width>15</width>
+                     <height>15</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Copy Open Location Code to Clipboard</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="icons.qrc">
+                     <normaloff>:/icons/copyclipboard.png</normaloff>:/icons/copyclipboard.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -463,7 +557,7 @@
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>180</height>
+              <height>200</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -553,10 +647,10 @@
                 <number>0</number>
                </property>
                <property name="topMargin">
-                <number>5</number>
+                <number>2</number>
                </property>
                <property name="bottomMargin">
-                <number>0</number>
+                <number>2</number>
                </property>
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -1690,7 +1784,7 @@
      <x>0</x>
      <y>0</y>
      <width>1209</width>
-     <height>26</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1894,7 +1988,7 @@
   </action>
   <action name="action_CreateTrackFromWaypoints">
    <property name="text">
-    <string>&amp;Create Track From Waypoints</string>
+    <string>&amp;Track From Waypoints</string>
    </property>
   </action>
   <action name="action_ReduceTrackPoints">

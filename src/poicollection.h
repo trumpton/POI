@@ -52,6 +52,9 @@ public:
         GEOCOUNTRY,
         GEOCOUNTRYCODE,
 
+        // Open Location Code
+        OLC,
+
         // Date / TIme
         DATETIME,
 
@@ -77,6 +80,7 @@ private:
     long int arrayToLong(QByteArray data) ;
     QByteArray longToArray(long int data) ;
     QString toUtf8(QByteArray ba) ;
+    bool updateOlc() ;
 
 public:
     PoiEntry() ;
@@ -99,6 +103,8 @@ public:
     void setLatLon(double lat, double lon) ;
     double lat() ;
     double lon() ;
+    const QString& olc() ;
+
 
     bool setImage(QImage img) ;
     QPixmap& pixmap() ;
@@ -109,7 +115,7 @@ public:
 
     // Route Information
     void setSequence(int seq) ;
-    const int sequence() ;
+    int sequence() ;
 
     // OV2 Stream read & write
     bool importOv2(QFile& inputstream) ;
@@ -145,6 +151,7 @@ private:
     int iSequence ;
     bool bValid ;
     bool bDirty ;
+    QString sOlc ;
 
 public:
     TrackEntry() ;
@@ -159,6 +166,7 @@ public:
     bool isDirty() ;
     void markAsClean() ;
     int sequence() ;
+    QString olc() ;
     QString uuid() ;
     QDateTime date() ;
     double distanceFrom(TrackEntry& other) ;

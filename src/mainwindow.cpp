@@ -22,6 +22,8 @@
 #include <QRegularExpressionMatch>
 #include <QStringList>
 #include <QFileDialog>
+#include <QClipboard>
+
 #include "prompt.h"
 
 #define STAR  QChar(0x2605)
@@ -320,8 +322,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->groupBox_Details->setVisible(false) ;
 
         // Photo
-        ui->groupBox_Photo->setEnabled(false) ;
-        ui->groupBox_Photo->setVisible(false) ;
+        ui->groupBox_PhotoOlc->setEnabled(false) ;
+        ui->groupBox_PhotoOlc->setVisible(false) ;
 
         // Track Details
         ui->groupBox_TrackDetails->setEnabled(false) ;
@@ -347,8 +349,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->btnStore->setEnabled(true) ;
             ui->btnDuplicate->setEnabled(true) ;
             ui->btnDelete->setEnabled(true) ;
-            ui->groupBox_Photo->setVisible(true) ;
-            ui->groupBox_Photo->setEnabled(true) ;
+            ui->groupBox_PhotoOlc->setVisible(true) ;
+            ui->groupBox_PhotoOlc->setEnabled(true) ;
 
         } else if (updateListSelection(&fileCollection, ui->listFile)) {
 
@@ -356,8 +358,8 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->groupBox_Details->setVisible(true) ;
             ui->btnEditFile->setEnabled(true) ;
             ui->btnCopyToClipboard->setEnabled(true) ;
-            ui->groupBox_Photo->setVisible(true) ;
-            ui->groupBox_Photo->setEnabled(true) ;
+            ui->groupBox_PhotoOlc->setVisible(true) ;
+            ui->groupBox_PhotoOlc->setEnabled(true) ;
             if (ui->action_ShowTrack->isChecked()) {
                 ui->btnDown->setEnabled(true) ;
                 ui->btnUp->setEnabled(true) ;
@@ -371,6 +373,7 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
             ui->label_TrackPointLon->setText(QString::number(te.lat(),'f',8)) ;
             ui->label_TrackPointAlt->setText(QString::number(te.elev(),'f',2)) ;
         }
+
 
         // Track Edit Buttons
         if (thisCollectionUuid.compare(fileCollection.trackUuid())==0) {
@@ -456,6 +459,8 @@ bool MainWindow::updateForm()
         ui->lineEdit_Phone2->setText(pe.get(PoiEntry::EDITEDPHONE2)) ;
         ui->lineEdit_Type->setText(pe.get(PoiEntry::EDITEDTYPE)) ;
 
+        ui->label_olc->setText(pe.olc()) ;
+
         if (pe.get(PoiEntry::GEOCODED).compare("yes")==0) {
             ui->label_MarkerPin->setVisible(true) ;
             ui->label_MarkerPinError->setVisible(false) ;
@@ -466,10 +471,10 @@ bool MainWindow::updateForm()
 
         if (!pe.pixmap().isNull()) {
             ui->labelImage->setPixmap(pe.pixmap());
-            ui->groupBox_Photo->setEnabled(true);
+            ui->groupBox_PhotoOlc->setEnabled(true);
         } else {
             ui->labelImage->setPixmap(nullpixmap);
-            ui->groupBox_Photo->setEnabled(false);
+            ui->groupBox_PhotoOlc->setEnabled(false);
         }
 
         return true ;
@@ -697,5 +702,11 @@ void MainWindow::on_comboBox_Rating_currentIndexChanged(int index)
 void MainWindow::on_action_ShowTrack_triggered()
 {
     refresh(false) ;
+}
+
+
+void MainWindow::on_button_copyOlc_clicked()
+{
+    QGuiApplication::clipboard()->setText(ui->label_olc->text()) ;
 }
 

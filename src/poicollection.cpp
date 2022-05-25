@@ -17,6 +17,9 @@
 
 #define STAR  QChar(0x2605)
 
+// Local function to calculate Open Location Code
+bool calculateOlc(double lat, double lon, int resolution, QString *olc) ;
+
 //
 // Duration Calculations:
 //
@@ -65,12 +68,13 @@ PoiEntry::PoiEntry() {
 void PoiEntry::clear() {
     QUuid quuid = QUuid::createUuid() ;
     sUuid = quuid.toString() ;
-    valid=false ; dirty=false ;
     dLat=0 ; dLon=0 ;
+    updateOlc() ;
     iSequence = 0 ;
     for (int i=0; i<NUMFIELDTYPES; i++) {
         sFields[i].clear() ;
     }
+    valid=false ; dirty=false ;
 }
 
 bool PoiEntry::isValid() { return valid ; }
@@ -117,12 +121,19 @@ void PoiEntry::setDate(QString date, int timezoneoffset) {
 
 QDateTime PoiEntry::date() { return tDate ; }
 
-void PoiEntry::setLatLon(double lat, double lon) { dLat = lat ; dLon = lon ; valid=true ; dirty=true ; }
+void PoiEntry::setLatLon(double lat, double lon) { dLat = lat ; dLon = lon ; updateOlc() ; valid=true ; dirty=true ; }
+
 double PoiEntry::lat() { return dLat ; }
+
 double PoiEntry::lon() { return dLon ; }
 
+const QString &PoiEntry::olc() {
+    if (sFields[OLC].isEmpty()) { updateOlc() ; }
+    return sFields[OLC] ;
+}
+
 void PoiEntry::setSequence(int seq) { iSequence = seq ; }
-const int PoiEntry::sequence() { return iSequence ; }
+int PoiEntry::sequence() { return iSequence ; }
 
 bool PoiEntry::setImage(QImage img) {
     bool status = pPixmap.convertFromImage(img.scaled(180,130)) ;
@@ -293,6 +304,18 @@ void PoiEntry::copyFrom(PoiEntry& source)
     *this = source ;
     sUuid = thisId ;
     dirty = false ;
+}
+
+
+bool PoiEntry::updateOlc()
+{
+    // resolution = 0,1,2,3,4 => 13.9m, 2.8m, 56x87cm, 11x22cm, 2x5cm, 4x14mm
+    int resolution=2 ;
+    QString olc="" ;
+    calculateOlc(dLat, dLon, resolution, &olc) ;
+    // Store Open Location Code
+    set(OLC, olc) ;
+    return true ;
 }
 
 
@@ -683,12 +706,13 @@ QString PoiCollection::loadGpx(QString filename)
          QDomNode latnode = n.attributes().namedItem("lat") ;
          QDomNode lonnode = n.attributes().namedItem("lon") ;
 
-         double lat, lon ;
+         double lat=-360, lon=-360 ;
 
          if (latnode.isAttr()) lat = latnode.nodeValue().toDouble() ;
          if (lonnode.isAttr()) lon = lonnode.nodeValue().toDouble() ;
-
-         ent.setLatLon(lat, lon) ;
+         if (lat>-360.0 && lon>-360.0) {
+             ent.setLatLon(lat, lon) ;
+         }
 
          extractXmlData(n, "ele", PoiEntry::GEOELEVATION, ent) ;
          extractXmlData(n, "time", PoiEntry::AUTOTIME, ent) ;
@@ -1004,6 +1028,7 @@ bool PoiCollection::saveGpx(QString filename)
         storeXmlData(doc, PoiEntry::GEOPOSTCODE, ent, poiext, "poix:GeoPostcode") ;
         storeXmlData(doc, PoiEntry::GEOCOUNTRY, ent, poiext, "poix:GeoCountry") ;
         storeXmlData(doc, PoiEntry::GEOCOUNTRYCODE, ent, poiext, "poix:GeoCountryCode") ;
+        storeXmlData(doc, PoiEntry::OLC, ent, poiext, "poix:OpenLocationCode") ;
         storeXmlData(doc, PoiEntry::EDITEDDOOR, ent, poiext, "poix:EditedDoorNumber") ;
         storeXmlData(doc, PoiEntry::EDITEDSTREET, ent, poiext, "poix:EditedStreet") ;
         storeXmlData(doc, PoiEntry::EDITEDCITY, ent, poiext, "poix:EditedCity") ;
@@ -1435,10 +1460,7 @@ TrackEntry::TrackEntry()
 {
     QUuid quuid = QUuid::createUuid() ;
     sUuid = quuid.toString() ;
-    dLat = 0.0 ;
-    dLon = 0.0 ;
-    dElev = 0.0 ;
-    tDate = QDateTime() ;
+    set(0.0, 0.0, 0.0, QDateTime()) ;
     bValid = false ;
     bDirty = false ;
 }
@@ -1451,8 +1473,7 @@ void TrackEntry::markAsClean() { bDirty = false ; }
 
 void TrackEntry::set(double lat, double lon, double elev, QDateTime date)
 {
-    dLat = lat ;
-    dLon = lon ;
+    setLatLon(lat, lon) ;
     dElev = elev ;
     tDate = date ;
     bValid = true ;
@@ -1461,8 +1482,12 @@ void TrackEntry::set(double lat, double lon, double elev, QDateTime date)
 
 void TrackEntry::setLatLon(double lat, double lon)
 {
+    // resolution = 0,1,2,3,4 => 13.9m, 2.8m, 56x87cm, 11x22cm, 2x5cm, 4x14mm
+    int resolution=2 ;
     dLat = lat ;
     dLon = lon ;
+    sOlc = "" ;
+    calculateOlc(lat, lon, resolution, &sOlc) ;
     bValid = true ;
     bDirty = true  ;
 }
@@ -1497,6 +1522,11 @@ double TrackEntry::elev()
     return dElev ;
 }
 
+QString TrackEntry::olc()
+{
+    return sOlc ;
+}
+
 int TrackEntry::sequence()
 {
     return iSequence ;
@@ -1521,3 +1551,101 @@ bool TrackEntry::isDirty()
 {
     return bDirty ;
 }
+
+
+//
+//
+//
+
+bool calculateOlc(double lat, double lon, int resolution, QString *olc)
+{
+    static char b20[] = "23456789CFGHJMPQRVWX" ;
+
+    if (!olc) return false ;
+
+    // resolution (diagonal length of 'box')
+    //   0 ~ 20m
+    //   1 ~ 5m
+    //   2 ~ 1m
+    //   3 ~ 250mm
+    //   4 ~ 50mm
+    //   5 ~ 15mm
+
+    if (resolution<0 || resolution>5) {
+        resolution=2 ;
+    }
+
+    // Clip to ensure legal
+
+    if (lat < -90.0) { lat= -90.0 ; }
+    if (lat > +90.0) { lat= +90.0 ; }
+    if (lon < -180.0) { lon = -180.0 ; }
+    if (lon > +180.0) { lon = +180.0 ; }
+
+
+    // Calculating the most significant 10 digits
+
+    // Add 90 to the latitude
+    // Add 180 to the longitude
+
+    lat = lat + 90.0 ;
+    lon = lon + 180.0 ;
+
+    // Divide latitude by 20
+    // Divide longitude by 20
+
+    lat = lat / 20 ;
+    lon = lon / 20 ;
+
+    // Lookup Integer of Latitude in table for first output character
+    // Lookup Integer of Longitude in table next output character
+
+    (*olc) = (*olc) + b20[int(lat)] ;
+    (*olc) = (*olc) + b20[int(lon)] ;
+
+    // Loop 4 times:
+
+    for (int l=1; l<=4; l++) {
+
+        // If on 4th loop
+        if (l==4) {
+            // Add plus as next output character
+            (*olc) = (*olc) + "+" ;
+        }
+
+        // Multiply remainder of Latitude by 20
+        // Multiply remainder of Longitude by 20
+
+        lat = 20 * (lat-int(lat)) ;
+        lon = 20 * (lon-int(lon)) ;
+
+        // Lookup Integer of Latitude for next output character
+        // Lookup Integer of Longitude for next output character
+
+        (*olc) = (*olc) + b20[int(lat)] ;
+        (*olc) = (*olc) + b20[int(lon)] ;
+
+    }
+
+    // Calculating the least significant 5 digits
+
+    // Loop up to 5 times:
+
+    for (int l=1; l<=resolution; l++) {
+
+        // Multiply remainder of Latitude by 5
+        // Multiply remainder of Longitude by 4
+
+        lat = 5 * (lat-int(lat)) ;
+        lon = 4 * (lon-int(lon)) ;
+
+        // Lookup Integer of Lat*4 + Integer of Lon for next output character
+
+        (*olc) = (*olc) + b20[4*int(lat)+int(lon)] ;
+
+    }
+
+    return true ;
+}
+
+

@@ -135,6 +135,8 @@ private slots:
 
     void tick() ;
 
+    void on_button_copyOlc_clicked();
+
 private:
 
     // Update the lists and entry form

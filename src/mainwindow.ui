@@ -1832,6 +1832,7 @@
     <addaction name="action_UnmountGarminDevice"/>
     <addaction name="separator"/>
     <addaction name="action_LaunchTomTom"/>
+    <addaction name="actionSync_with_Google"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -2151,6 +2152,11 @@
   <action name="action_UnmountGarminDevice">
    <property name="text">
     <string>&amp;Eject Garmin Device</string>
+   </property>
+  </action>
+  <action name="actionSync_with_Google">
+   <property name="text">
+    <string>Sync with &amp;Google</string>
    </property>
   </action>
  </widget>

@@ -710,3 +710,9 @@ void MainWindow::on_button_copyOlc_clicked()
     QGuiApplication::clipboard()->setText(ui->label_olc->text()) ;
 }
 
+
+void MainWindow::on_actionSync_with_Google_triggered()
+{
+    doSyncWithGoogle() ;
+}
+

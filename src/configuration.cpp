@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QDir>
 
+#include "googleaccess/google-auth.h"
 
 Configuration::Configuration(QWidget *parent) :
     QDialog(parent),
@@ -12,6 +13,10 @@ Configuration::Configuration(QWidget *parent) :
 {
     ui->setupUi(this);
     settings = new QSettings("trumpton.uk", "Poi");
+
+    // Configure Google Access
+    googleaccess = new GoogleAccess(AUTHID,AUTHSCOPE,AUTHSECRET) ;
+
     filesettings=NULL ;
     reloadIni() ;
     QDir::setCurrent(poiFolder()) ;
@@ -122,6 +127,9 @@ int Configuration::exec()
         ui->radioButton_copyData->setChecked(true) ;
     }
     ui->confIniFolder->setText(iniFolder()) ;
+
+    // Refresh google account name
+    ui->label_google_account->setText(googleaccess->getUsername()) ;
 
     int i=QDialog::exec() ;
     if (i==QDialog::Accepted) {
@@ -349,4 +357,20 @@ bool Configuration::iniFileLoadedOK()
     return true ;
 }
 
+
+GoogleAccess& Configuration::googleAccess()
+{
+    return *googleaccess ;
+}
+
+void Configuration::on_pushButton_googleAuthorise_clicked()
+{
+   // Re-authorise google account
+   if (googleaccess->Authorise()) {
+     QMessageBox::warning(this, "POI", QString("Google Access: ") + googleaccess->getNetworkError()) ;
+   }
+
+   // Refresh google account name
+   ui->label_google_account->setText(googleaccess->getUsername()) ;
+}
 

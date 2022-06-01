@@ -137,6 +137,8 @@ private slots:
 
     void on_button_copyOlc_clicked();
 
+    void on_actionSync_with_Google_triggered();
+
 private:
 
     // Update the lists and entry form
@@ -169,6 +171,9 @@ private:
     bool updateListsSelection() ;
     bool updateListSelection(PoiCollection *collection, QListWidget *widget) ;
     bool updateSearchFilter() ;
+
+    // Syncronise current POI list with Google
+    void doSyncWithGoogle() ;
 
     // Update tracks.ov2
     bool refreshTracksPoi() ;
@@ -207,6 +212,7 @@ private:
 
     // Initialisation flag
     bool juststarted ;
+
 };
 
 #endif // MAINWINDOW_H

@@ -20,7 +20,9 @@ GIT_VERSION = $$system(git --git-dir $$PWD/../.git --work-tree $$PWD describe --
 DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 SOURCES += main.cpp\
+    googleaccess/googleaccess.cpp \
         mainwindow.cpp \
+    mainwindow_googlesync.cpp \
     poicollection.cpp \
     configuration.cpp \
     cookies.cpp \
@@ -36,6 +38,8 @@ SOURCES += main.cpp\
     segmentchooser.cpp
 
 HEADERS  += mainwindow.h \
+    googleaccess/google-auth.h \
+    googleaccess/googleaccess.h \
     poicollection.h \
     configuration.h \
     cookies.h \

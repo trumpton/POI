@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QSettings>
 #include <QDataStream>
+#include "googleaccess/googleaccess.h"
 
 // INI File Name
 #define INIFILE "POI.ini"
@@ -42,6 +43,9 @@ public:
     ~Configuration();
 
     void reloadIni() ;
+
+    // Get GoogleAccess
+    GoogleAccess& googleAccess() ;
 
     QString& poiFolder() ;
     QString& tracksFolder() ;
@@ -95,6 +99,8 @@ private slots:
 
     void on_pushButton_SearchGarminFrom_clicked();
 
+    void on_pushButton_googleAuthorise_clicked();
+
 private:
     QString sFileName, sGarmin, sGarminFrom, sTracks ;
     QString sImportFolder, sOpenFolder, sImageFolder, sIniFolder ;
@@ -103,6 +109,7 @@ private:
     QSettings *settings ;
     QSettings *filesettings ;
     Ui::Configuration *ui;
+    GoogleAccess *googleaccess ;
 
     // Expand Keys for src url
     QString expandkeys(QString src);

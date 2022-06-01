@@ -8,6 +8,6 @@
 
 #define AUTHID "blahblah.apps.googleusercontent.com"
 #define AUTHSECRET "blah-blah"
-#define AUTHSCOPE "https://www.googleapis.com/scope1 https://www.googleapis.com/scope2"
+#define AUTHSCOPE "https://www.googleapis.com/auth/contacts"
 
 #endif // GOOGLEAUTH_H

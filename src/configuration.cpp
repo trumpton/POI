@@ -366,7 +366,7 @@ GoogleAccess& Configuration::googleAccess()
 void Configuration::on_pushButton_googleAuthorise_clicked()
 {
    // Re-authorise google account
-   if (googleaccess->Authorise()) {
+   if (!googleaccess->Authorise()) {
      QMessageBox::warning(this, "POI", QString("Google Access: ") + googleaccess->getNetworkError()) ;
    }
 

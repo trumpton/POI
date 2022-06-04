@@ -716,3 +716,10 @@ void MainWindow::on_actionSync_with_Google_triggered()
     doSyncWithGoogle() ;
 }
 
+
+
+void MainWindow::on_action_Purge_All_Google_Entries_triggered()
+{
+    doPurgeAllGoogleEntries() ;
+}
+

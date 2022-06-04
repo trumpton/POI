@@ -139,6 +139,8 @@ private slots:
 
     void on_actionSync_with_Google_triggered();
 
+    void on_action_Purge_All_Google_Entries_triggered();
+
 private:
 
     // Update the lists and entry form
@@ -174,6 +176,13 @@ private:
 
     // Syncronise current POI list with Google
     void doSyncWithGoogle() ;
+    void doPurgeAllGoogleEntries() ;
+
+    void googlesync_uploadcontacts(int *added) ;
+    void googlesync_processcontacts(QString contacts, int *modified, int *removed) ;
+    void googlesync_removeallpoicontacts(QString contacts,int *removed) ;
+
+    QJsonObject googlesync_buildcontact(QString fcname, QString fcUuid, PoiEntry *pe, QString etag = "") ;
 
     // Update tracks.ov2
     bool refreshTracksPoi() ;

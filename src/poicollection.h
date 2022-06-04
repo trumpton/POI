@@ -75,6 +75,7 @@ private:
     bool valid ;
     bool dirty ;
     int iSequence ;
+    bool flagvalue ;
 
     // Data Conversion
     long int arrayToLong(QByteArray data) ;
@@ -88,6 +89,10 @@ public:
     bool isDirty() ;
     void markAsClean() ;    
 
+    // Tracking flags not saved)
+    void setFlag(bool state) ;
+    bool flag() ;
+
     void clear() ;
 
     // UUID, used to uniquely identify the POI
@@ -96,9 +101,14 @@ public:
 
     double distanceFrom(PoiEntry &other) ;
 
-    // POI Information
+    // set POI Information
     void set(FieldType type, QString data) ;
+
+    // get POI Information
     const QString& get(FieldType type) ;
+
+    // get POI Information (return type2 contents if type1 empty)
+    const QString& get(FieldType type1, FieldType type2) ;
 
     void setLatLon(double lat, double lon) ;
     double lat() ;
@@ -221,6 +231,9 @@ public:
 
     bool isDirty() ;
     void markAsDirty() ;
+
+    // Clear all PoiEntry 'flags'
+    void clearFlags() ;
 
     QString& getSequenceText() ;
 

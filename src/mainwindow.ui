@@ -1832,7 +1832,9 @@
     <addaction name="action_UnmountGarminDevice"/>
     <addaction name="separator"/>
     <addaction name="action_LaunchTomTom"/>
+    <addaction name="separator"/>
     <addaction name="actionSync_with_Google"/>
+    <addaction name="action_Purge_All_Google_Entries"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -2156,7 +2158,12 @@
   </action>
   <action name="actionSync_with_Google">
    <property name="text">
-    <string>Sync with &amp;Google</string>
+    <string>Upload to &amp;Google</string>
+   </property>
+  </action>
+  <action name="action_Purge_All_Google_Entries">
+   <property name="text">
+    <string>&amp;Purge All Google Entries</string>
    </property>
   </action>
  </widget>

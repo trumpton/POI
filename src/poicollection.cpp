@@ -74,12 +74,16 @@ void PoiEntry::clear() {
     for (int i=0; i<NUMFIELDTYPES; i++) {
         sFields[i].clear() ;
     }
-    valid=false ; dirty=false ;
+    valid=false ; dirty=false ; flagvalue=false ;
 }
 
 bool PoiEntry::isValid() { return valid ; }
 bool PoiEntry::isDirty() { return dirty ; }
 void PoiEntry::markAsClean() { dirty = false ; }
+
+bool PoiEntry::flag() { return flagvalue ; }
+void PoiEntry::setFlag(bool state) { flagvalue = state ; }
+
 
 void PoiEntry::setUuid(QString uuid) { sUuid = uuid ; }
 const QString& PoiEntry::uuid() { return sUuid ; }
@@ -99,6 +103,15 @@ double PoiEntry::distanceFrom(PoiEntry &other)
 }
 
 const QString& PoiEntry::get(PoiEntry::FieldType type) { return sFields[(int)type] ; }
+
+const QString& PoiEntry::get(FieldType type1, FieldType type2) {
+    if (sFields[(int)type1].isEmpty()) {
+        return sFields[(int)type2] ;
+    } else {
+        return sFields[(int)type1] ;
+    }
+}
+
 
 void PoiEntry::setDate(QString date, int timezoneoffset) {
 
@@ -348,6 +361,14 @@ QString& PoiCollection::getSequenceText()
 int PoiCollection::rating()
 {
     return iRating ;
+}
+
+void PoiCollection::clearFlags()
+{
+    int len = poiList.count() ;
+    for (int i=0; i<len; i++) {
+        poiList[i].setFlag(false) ;
+    }
 }
 
 int PoiCollection::setRating(int rating)

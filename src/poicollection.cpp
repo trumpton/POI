@@ -559,61 +559,22 @@ void PoiCollection::setName(QString name) {
 
 QString& PoiCollection::formattedName(bool includerating, bool includeduration, bool includedistance, bool includeheight, bool asfilename, bool starasasterisk)
 {
+
     sFormattedName.clear() ;
 
+    // Set base name
 
-    if (poiList.size()<=0) {
+    sFormattedName = sName ;
 
-      sFormattedName = QString("UNK-UNK-") ;
-
-    } else {
-
-        PoiEntry& ent = poiList[0] ;
-        QString countryCode = ent.get(PoiEntry::GEOCOUNTRYCODE) ;
-        QString city ;
-
-        if (!ent.get(PoiEntry::EDITEDCITY).isEmpty())
-            city = ent.get(PoiEntry::EDITEDCITY) ;
-        else
-            city = ent.get(PoiEntry::GEOCITY) ;
-
-        city = city.replace("-"," ") ;
-        sFormattedName = countryCode + QString("-") + city + QString("-") ;
-
-    }
+    // Attach Rating
 
     if (includerating && iRating>0) {
+        sFormattedName = sFormattedName + " " ;
         for (int i=0; i<iRating; i++) {
             sFormattedName = sFormattedName + STAR ;
         }
         sFormattedName = sFormattedName + QString(" ") ;
     }
-
-    bool lastwasspace=true ;
-    QString name = sName.replace("-"," ") ;
-    sFormattedName = sFormattedName + sName ;
-
-    // Capitalise and collapse spaces
-
-    QString newName ;
-    for (int i=0; i<sFormattedName.length(); i++) {
-        QChar ch = sFormattedName.at(i) ;
-        if (ch==QChar('-') || ch==QChar('_')) {
-            lastwasspace=true ;
-            newName = newName + ch ;
-        } else if (!ch.isLetterOrNumber()) {
-            lastwasspace=true ;
-            if (!asfilename) newName = newName + ch ;
-        } else {
-            if (lastwasspace) {
-                newName = newName + ch.toUpper() ;
-            } else {
-                newName = newName + ch.toLower() ;
-            }
-            lastwasspace=false ;
-        }
-    }
-    sFormattedName = newName ;
 
     // Attach Duration
 
@@ -629,6 +590,7 @@ QString& PoiCollection::formattedName(bool includerating, bool includeduration, 
     if (includedistance) {
         double distance = trackLength() ;
         if (!sFormattedName.isEmpty() && distance>0) {
+            if (includeduration) { sFormattedName = sFormattedName + "," ; }
             sFormattedName = sFormattedName + QString(" ") + QString::number(distance/1000,'f',1) + QString("km") ;
         }
     }
@@ -638,18 +600,33 @@ QString& PoiCollection::formattedName(bool includerating, bool includeduration, 
     if (includeheight) {
         double climb = heightGain() ;
         if (!sFormattedName.isEmpty() && climb>0) {
+            if (includeduration || includedistance) { sFormattedName = sFormattedName + "," ; }
             sFormattedName = sFormattedName + QString(" ") + QString::number(climb,'f',0) + QString("m") ;
         }
     }
 
-    // Attach Rating
+    // Force Stars to be asterisks
 
     if (starasasterisk) sFormattedName = sFormattedName.replace(STAR, '*') ;
 
-    // Remove Spaces
-
-    if (asfilename) sFormattedName = sFormattedName.replace(" ","") ;
-
+    // Format as a filename
+    if (asfilename) {
+        sFormattedName = sFormattedName.replace(" ","") ;
+#if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
+        // Replace 'reserved' Unix filename characters
+        sFormattedName = sFormattedName.replace("/","-") ;
+#else
+        // Replace 'reserved' Windows filename characters
+        sFormattedName = sFormattedName.replace("\\","-") ;
+        sFormattedName = sFormattedName.replace(":",";") ;
+        sFormattedName = sFormattedName.replace(STAR,"x") ;
+        sFormattedName = sFormattedName.replace("*","x") ;
+        sFormattedName = sFormattedName.replace("?",".") ;
+        sFormattedName = sFormattedName.replace("|",".") ;
+        sFormattedName = sFormattedName.replace(">",")") ;
+        sFormattedName = sFormattedName.replace("<","(") ;
+#endif
+    }
     return sFormattedName ;
 }
 

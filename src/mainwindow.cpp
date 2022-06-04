@@ -232,8 +232,10 @@ bool MainWindow::refreshTracksPoi()
 
     if (!trackfilename.isEmpty() && !trackfolder.isEmpty()) {
 
+        // Fix the track filename and the UUID
         trackfilename = trackfilename +  "/" + "Tracks.gpx" ;
         PoiCollection tracks ;
+        tracks.setUuid("{6ca95da8-1171-466f-9926-d34bb6e29e63}") ;
 
         // Parse all gpx files in the tracks folder
         QDir gpxfolder(trackfolder) ;

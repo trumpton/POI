@@ -392,6 +392,10 @@ bool MainWindow::refresh(bool refreshMarkers, bool centreOnMarker, int zoom)
         ui->action_ShowTrack->setEnabled(fileCollection.size()>0) ;
         ui->action_EmptyClipboard->setEnabled(workingCollection.size()>0) ;
         ui->actionUndo->setEnabled(undo.undoable()) ;
+        ui->actionSync_with_Google->setEnabled(!configuration->googleAccess().getUsername().isEmpty() &&
+                                               fileCollection.size()>0) ;
+        ui->action_Purge_All_Google_Entries->setEnabled(
+                    !configuration->googleAccess().getUsername().isEmpty()) ;
 
         mutex-- ;
         return true ;

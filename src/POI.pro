@@ -38,7 +38,7 @@ SOURCES += main.cpp\
     segmentchooser.cpp
 
 HEADERS  += mainwindow.h \
-    googleaccess/google-auth.h \
+    google-auth.h \
     googleaccess/googleaccess.h \
     poicollection.h \
     configuration.h \

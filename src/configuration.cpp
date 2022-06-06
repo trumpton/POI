@@ -5,21 +5,26 @@
 #include <QMessageBox>
 #include <QDir>
 
-#include "googleaccess/google-auth.h"
+#include "google-auth.h"
+#define AUTHSCOPE "https://www.googleapis.com/auth/contacts"
 
 Configuration::Configuration(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Configuration)
 {
     ui->setupUi(this);
+
+    // Configuration (non-ini) Settings
     settings = new QSettings("trumpton.uk", "Poi");
 
-    // Configure Google Access
-    googleaccess = new GoogleAccess(AUTHID,AUTHSCOPE,AUTHSECRET) ;
-
+    // Load settings from ini file
     filesettings=NULL ;
     reloadIni() ;
     QDir::setCurrent(poiFolder()) ;
+
+    // Configure Google Access
+    googleaccess = new GoogleAccess(googleOauth2Id(),AUTHSCOPE,googleOauth2Secret()) ;
+
 }
 
 void Configuration::reloadIni() {
@@ -217,6 +222,20 @@ QString Configuration::hereApiKey()
 {
     return filesettings->value("keys/hereapikey",
         QString("")).toString() ;
+}
+
+QString Configuration::googleOauth2Id()
+{
+    QString ConfId = filesettings->value("keys/googleoauth2id", QString("")).toString() ;
+    if (ConfId.isEmpty()) return QString(GOOGLEAUTHID)  ;
+    else return ConfId ;
+}
+
+QString Configuration::googleOauth2Secret()
+{
+    QString Secret = filesettings->value("keys/googleoauth2secret", QString("")).toString() ;
+    if (Secret.isEmpty()) return QString(GOOGLEAUTHSECRET)  ;
+    else return Secret ;
 }
 
 QString Configuration::mapTileUrl()

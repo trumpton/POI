@@ -71,6 +71,8 @@ public:
     QString hereId() ;
     QString hereCode() ;
     QString hereApiKey() ;
+    QString googleOauth2Id() ;
+    QString googleOauth2Secret() ;
 
 
     int aerialTileZoom() ;

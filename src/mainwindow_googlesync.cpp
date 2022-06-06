@@ -62,6 +62,19 @@ void MainWindow::doSyncWithGoogle()
         return ;
     }
 
+    // Prevent sync from running too quickly (prevents duplicate creations)
+    QDateTime now = QDateTime::currentDateTime() ;
+    if ( !googleLastSyncFileName.isEmpty() &&
+         this->fileCollection.filename() == googleLastSyncFileName &&
+         googleLastSyncTime.addSecs(30) > now &&
+         googleLastAdded > 0)  {
+        QMessageBox::warning(this, "POI", "Please wait 30 seconds and try again") ;
+        return ;
+    }
+
+    googleLastSyncFileName = this->fileCollection.filename() ;
+    googleLastSyncTime = now ;
+
     // Clear 'processed' flags
     fileCollection.clearFlags() ;
 
@@ -76,18 +89,35 @@ void MainWindow::doSyncWithGoogle()
                          QString("?pageSize=1000&personFields=addresses,externalIds,metadata,names,locations,userDefined")
                       );
 
+       if (configuration->googleAccess().getNetworkErrorCode()) {
+         QMessageBox::warning(this, "POI", QString("Sync download failed: ") +
+                              configuration->googleAccess().getNetworkError()) ;
+         return ;
+       }
+
        // Process the chunk of contacts
        googlesync_processcontacts(contacts,&modified,&removed) ;
 
     } while (0) ;
 
+    if (configuration->googleAccess().getNetworkErrorCode()) {
+      QMessageBox::warning(this, "POI", QString("Sync modify failed: ") +
+                           configuration->googleAccess().getNetworkError()) ;
+      return ;
+    }
 
     googlesync_uploadcontacts(&added) ;
+
+    if (configuration->googleAccess().getNetworkErrorCode()) {
+      QMessageBox::warning(this, "POI", QString("Sync upload failed: ") +
+                           configuration->googleAccess().getNetworkError()) ;
+      return ;
+    }
 
     QMessageBox::information(this, "POI", QString("Update complete: ") + QString::number(added) +
                              QString(" added, ") + QString::number(modified) + QString(" modified, ") +
                              QString::number(removed) + QString(" deleted"));
-
+    googleLastAdded = added ;
 }
 
 

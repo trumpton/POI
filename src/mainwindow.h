@@ -222,6 +222,12 @@ private:
     // Initialisation flag
     bool juststarted ;
 
+    // Google details of last sync operation
+    QDateTime googleLastSyncTime ;
+    QString googleLastSyncFileName ;
+    int googleLastAdded ;
+
+
 };
 
 #endif // MAINWINDOW_H

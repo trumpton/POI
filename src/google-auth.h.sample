@@ -1,0 +1,19 @@
+#ifndef GOOGLEAUTH_H
+#define GOOGLEAUTH_H
+
+// Rename this sample file as google-auth.h
+
+//
+// The OAUTH Client was not found: - Ensure that the details below are correct
+// The OAUTH Client was deleted: - Re-create the ID and Secret
+//
+
+// Create Google Credentials: https://console.cloud.google.com/apis/credentials
+// Select OAuth2 Client ID / 'TV and Limited Input', and record the client id
+// and secret below. Note: keys can be overridden in the INI file - it is not
+// mandatory to complete this section.
+
+#define GOOGLEAUTHID ""
+#define GOOGLEAUTHSECRET ""
+
+#endif // GOOGLEAUTH_H

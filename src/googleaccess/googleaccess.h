@@ -5,6 +5,7 @@
 //#include <QDomElement>
 #include <QString>
 //#include <QList>
+#include <QNetworkReply>
 
 
 class GoogleAccess
@@ -63,6 +64,9 @@ private:
 
     // Gets an access token, using the refresh token
     void googleGetAccessToken() ;
+
+    // Extract error code and update errorcode/errorstatus
+    void ExtractErrorCode(QNetworkReply *reply) ;
 
     // Extract parameter from OAuth2 response
     QString ExtractParameter(QString Response, QString Parameter, int Occurrence=1) ;

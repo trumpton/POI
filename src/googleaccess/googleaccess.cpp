@@ -8,6 +8,7 @@
 
 
 #include "googleaccess.h"
+#include "qjsonobject.h"
 #include <QThread>
 #include <QDir>
 #include <QFile>
@@ -19,6 +20,7 @@
 #include <QMessageBox>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QJsonDocument>
 
 
 //
@@ -204,7 +206,7 @@ bool GoogleAccess::Authorise()
           QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
           errorcode=replycode.toInt() ;
           if (replycode.toInt()<200 || replycode.toInt()>299) {
-              errorstatus= QString("Error ") + replycode.toString() ;
+              ExtractErrorCode(reply) ;
               return false ;
           }
           break ;
@@ -238,6 +240,25 @@ bool GoogleAccess::Authorise()
 }
 
 
+void GoogleAccess::ExtractErrorCode(QNetworkReply *reply)
+{
+    QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
+    QByteArray resp = reply->readAll() ;
+    QJsonDocument respdoc ;
+    QJsonParseError err ;
+    respdoc = QJsonDocument::fromJson(resp, &err) ;
+    if( err.error != QJsonParseError::NoError ) {
+        errorstatus = QString("Json Error: ") + err.errorString().toLatin1() ;
+        errorcode = 999 ;
+    } else {
+        QJsonObject srcobj = respdoc.object() ;
+        QString error = srcobj.value("error").toString() ;
+        QString descr = srcobj.value("error_description").toString() ;
+        errorstatus= QString("Error ") + replycode.toString() + QString(", ") +
+            error + QString (" - ") + descr ;
+        errorcode=replycode.toInt() ;
+    }
+}
 
 //=====================================================================================================
 //
@@ -257,6 +278,7 @@ void GoogleAccess::googleGetAccessToken()
 
     if (refreshtoken.isEmpty()) {
         errorstatus="Google account not set up in File/Setup (invalid refresh token)" ;
+        errorcode=999 ;
         return ;
     }
 
@@ -271,34 +293,42 @@ void GoogleAccess::googleGetAccessToken()
     reply = manager.post(request, params.query(QUrl::FullyEncoded).toUtf8());
     eventLoop.exec() ;
 
+    QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
+
     switch (reply->error()) {
     case QNetworkReply::ConnectionRefusedError:
         errorstatus="Connection Refused" ;
+        errorcode=replycode.toInt() ;
         break ;
     case QNetworkReply::RemoteHostClosedError:
         errorstatus="Remote Host Closed Connection" ;
+        errorcode=replycode.toInt() ;
         break ;
     case QNetworkReply::HostNotFoundError:
         errorstatus="Host accounts.google.com Not Found" ;
+        errorcode=replycode.toInt() ;
         break ;
     case QNetworkReply::UnknownServerError:
         errorstatus="Unknown Server Error" ;
+        errorcode=replycode.toInt() ;
         break ;
     default:
-        QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
+        QString resultstring = reply->readAll() ;
         if (replycode.toInt()>=200 && replycode.toInt()<=299) {
-            QString resultstring = reply->readAll() ;
             accesstoken = ExtractParameter(resultstring, "access_token") ;
             if (accesstoken.isEmpty()) {
                 errorstatus="Google access token not found." ;
+                errorcode=404 ;
+            } else {
+                // Success
+                errorstatus="" ;
+                errorcode=0 ;
             }
         } else {
-            errorstatus="Error " + replycode.toString() ;
+            ExtractErrorCode(reply) ;
         }
         break ;
     }
-
-
 }
 
 //=====================================================================================================
@@ -429,6 +459,7 @@ QString GoogleAccess::googlePutPostDelete(QString link, enum googleAction action
                 connectionerror = false ;
                 if (replycode.toInt()>=200 && replycode.toInt()<=299) {
                   errorstatus = "" ;
+                  errorcode=0 ;
                   googlePutPostResponse = reply->readAll() ;
                   readsuccess=true ;
 
@@ -445,10 +476,13 @@ QString GoogleAccess::googlePutPostDelete(QString link, enum googleAction action
                     }
 
                 } else {
+
+                  googlePutPostResponse="" ;
+                  ExtractErrorCode(reply) ;
                   errorstatus = "Network Error " + replycode.toString() ;
-                  googlePutPostResponse = reply->readAll() ;
                   connectionerror=true ;
                   readsuccess=false ;
+
                 }
             }
         }
@@ -536,11 +570,12 @@ QString GoogleAccess::googleGet(QString link)
                 if (replycode.toInt()>=200 && replycode.toInt()<=299) {
                   googleGetResponse = reply->readAll() ;
                   errorstatus="" ;
+                  errorcode=0 ;
                   readsuccess=true ;
                 } else {
                   googleGetResponse = "" ;
-                  errorstatus = "Network Error " + replycode.toString() ;
-                  googleGetResponse = reply->readAll() ;
+                  ExtractErrorCode(reply) ;
+                  connectionerror=true ;
                   readsuccess=false ;
                 }
                 break ;

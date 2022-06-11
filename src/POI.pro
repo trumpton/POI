@@ -4,6 +4,8 @@
 #
 #-------------------------------------------------
 
+DEFINES += QT_DEPRECATED_WARNINGS
+
 QT += core gui network xml
 QT += webenginewidgets
 
@@ -13,6 +15,10 @@ QT += webenginewidgets
 #CONFIG += qml_debug
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+# sudo apt-get install libssl-dev
+# LIBS += -lssl -lcrypto
+
+
 TARGET = POI
 TEMPLATE = app
 
@@ -21,7 +27,7 @@ DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 SOURCES += main.cpp\
     googleaccess/googleaccess.cpp \
-        mainwindow.cpp \
+    mainwindow.cpp \
     mainwindow_googlesync.cpp \
     poicollection.cpp \
     configuration.cpp \
@@ -38,7 +44,6 @@ SOURCES += main.cpp\
     segmentchooser.cpp
 
 HEADERS  += mainwindow.h \
-    google-auth.h \
     googleaccess/googleaccess.h \
     poicollection.h \
     configuration.h \

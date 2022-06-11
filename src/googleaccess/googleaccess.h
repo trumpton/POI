@@ -25,9 +25,8 @@ public:
   // previously generated with googleAuthorise.
   GoogleAccess(QString clientid, QString scope, QString secret);
 
-  // Pop up authorisation dialog, and save tokens in QSettings
-  // Returns true on success.  On failure, sets 'getNetworkError'
-  // string.
+  // Calls either AuthoriseLimitedInput() or AuthoriseDesktopApplication()
+  // to request access permission from the user.
   bool Authorise() ;
 
   // Return the username associated with the current
@@ -62,6 +61,9 @@ private:
     bool connectionerror ;
     int errorcode ;
 
+    // Check SSL Loaded (return version string or "")
+    QString checkSsl() ;
+
     // Gets an access token, using the refresh token
     void googleGetAccessToken() ;
 
@@ -69,11 +71,17 @@ private:
     void ExtractErrorCode(QNetworkReply *reply) ;
 
     // Extract parameter from OAuth2 response
-    QString ExtractParameter(QString Response, QString Parameter, int Occurrence=1) ;
+    QString ExtractParameter(QString Response, QString Parameter) ;
 
     // Save and load settings
     bool saveSettings() ;
     bool loadSettings() ;
+
+    // Simple Authorisation Function
+    bool AuthoriseLimitedInput() ;
+
+    // Complex Authorisation Function (requires web page resources)
+    bool AuthoriseDesktopApplication() ;
 
 };
 

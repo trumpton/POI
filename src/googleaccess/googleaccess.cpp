@@ -23,6 +23,8 @@
 #include <QJsonDocument>
 
 
+QString checkSsl() ;
+
 //
 // Public: GoogleAccess - Constructor
 //
@@ -57,8 +59,8 @@ QString GoogleAccess::getUsername()
 //
 // Public: GoogleAccess - Authorise
 //
-//  Get the authorisation token, by popping up a dialog box to prompt the
-//  user to visit an authorisation url, and enter the response code.
+//  Prompts user for access to Google resources using [[either DesktopApplication or]]
+//  LimitedInputDevice mechanism.
 //
 //  Stores a refresh_token_and_username, which is valid indefinately, and
 //  enables the app to gain access again and again without logging in.
@@ -66,6 +68,62 @@ QString GoogleAccess::getUsername()
 //  Returns an empty string on success, or an error message on failure
 //
 bool GoogleAccess::Authorise()
+{
+    // Erase current saved settings
+    saveSettings() ;
+
+    // Check SSL
+    if (checkSsl().isEmpty()) {
+        errorcode=999 ;
+        errorstatus=QString("Authentication error: openssl 1.x is required, but cannot be found. ") +
+#ifdef Q_OS_WIN
+                QString("libeay32.dll and ssleay32.dll not found. Download and install openssl 1.x.");
+#else
+                QString("You may need to download and compile openssl - see https://linuxpip.org/install-openssl-linux/") ;
+#endif
+        return false ;
+    }
+
+    return AuthoriseLimitedInput() ;
+}
+
+//=====================================================================================================
+//
+// Private: GoogleAccess - AuthoriseDesktopApplication
+//
+// Performs an authorisation of a Desktop Application - launches the
+// authorisation using a built-in web server
+//
+#include <QWindow>
+#include <QWebEngineView>
+
+bool GoogleAccess::AuthoriseDesktopApplication()
+{
+/*
+ *  TO BE INCLUDED
+ *
+
+    QWindow win ;
+    QWebEngineView webpage ;
+    win.setTitle("Google Authorisation") ;
+    win.show() ;
+    return false ;
+ *
+ */
+}
+
+//=====================================================================================================
+//
+// Private: GoogleAccess - AuthoriseLimitedInput
+//
+// Performs an authorisation of a Limited Input device (launches the
+// authorisation in an external web browser
+//
+//  Get the authorisation token, by popping up a dialog box to prompt the
+//  user to visit an authorisation url, and enter the response code.
+
+//
+bool GoogleAccess::AuthoriseLimitedInput()
 {
     QString resultstring  ;
 
@@ -85,9 +143,6 @@ bool GoogleAccess::Authorise()
     errorstatus="" ;
     errorcode=200 ;
 
-    // Erase current saved settings
-    saveSettings() ;
-
     // Get the authorisation url and user code
 
     {
@@ -105,23 +160,30 @@ bool GoogleAccess::Authorise()
 
       eventLoop.exec() ;
 
-      //QNetworkReply::NetworkError err = reply->error() ;
-      //QString errstring = reply->errorString() ;
+      QNetworkReply::NetworkError err = reply->error() ;
+      QString errstring = reply->errorString() ;
 
-      resultstring = reply->readAll() ;
-      device_code = ExtractParameter(resultstring, "device_code") ;
-      user_code = ExtractParameter(resultstring, "user_code") ;
-      verification_url = ExtractParameter(resultstring, "verification_url") ;
-      expires_in = ExtractParameter(resultstring, "expires_in") ;
-      interval = ExtractParameter(resultstring, "interval") ;
-      error = ExtractParameter(resultstring, "error") ;
-      error_description = ExtractParameter(resultstring, "error_description") ;
+      if (err!=QNetworkReply::NoError) {
+
+          error_description = errstring  + QString(" (") + checkSsl() + QString(")");
+
+      } else {
+
+          resultstring = reply->readAll() ;
+          device_code = ExtractParameter(resultstring, "device_code") ;
+          user_code = ExtractParameter(resultstring, "user_code") ;
+          verification_url = ExtractParameter(resultstring, "verification_url") ;
+          expires_in = ExtractParameter(resultstring, "expires_in") ;
+          interval = ExtractParameter(resultstring, "interval") ;
+          error = ExtractParameter(resultstring, "error") ;
+          error_description = ExtractParameter(resultstring, "error_description") ;
+      }
 
     }
 
     if (!error_description.isEmpty()) {
         errorcode=999 ;
-        errorstatus=QString("Authentication error: ") + error_description ;
+        errorstatus=QString("Authentication error: ")  + error_description ;
         return false ;
     }
 
@@ -239,26 +301,6 @@ bool GoogleAccess::Authorise()
     return true ;
 }
 
-
-void GoogleAccess::ExtractErrorCode(QNetworkReply *reply)
-{
-    QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
-    QByteArray resp = reply->readAll() ;
-    QJsonDocument respdoc ;
-    QJsonParseError err ;
-    respdoc = QJsonDocument::fromJson(resp, &err) ;
-    if( err.error != QJsonParseError::NoError ) {
-        errorstatus = QString("Json Error: ") + err.errorString().toLatin1() ;
-        errorcode = 999 ;
-    } else {
-        QJsonObject srcobj = respdoc.object() ;
-        QString error = srcobj.value("error").toString() ;
-        QString descr = srcobj.value("error_description").toString() ;
-        errorstatus= QString("Error ") + replycode.toString() + QString(", ") +
-            error + QString (" - ") + descr ;
-        errorcode=replycode.toInt() ;
-    }
-}
 
 //=====================================================================================================
 //
@@ -604,37 +646,50 @@ QString GoogleAccess::googleGet(QString link)
 // Parse the supplied response, and extract the JSON parameter identified
 //
 
-QString GoogleAccess::ExtractParameter(QString Response, QString Parameter, int Occurrence)
+QString GoogleAccess::ExtractParameter(QString Response, QString Parameter)
 {
-    QStringList records;
     QString record ;
     QString pattern ;
     QString extracttokenresult = "" ;
 
     if (Response.isEmpty()) return extracttokenresult ;
 
-    // Remove \n and extract the Occurrenceth set of {}
-
-    records = Response.replace("\n","").split("{") ;
-    int numrecords = records.size() ;
-    if (Occurrence>=(numrecords) || Occurrence<1) return extracttokenresult ;
-    record=records[Occurrence] ;
-
-    // Find "parameter" : "xxxx",
-    // "parameter" : "xxxx"}
+    // Find "parameter" : "xxxx", || "parameter" : "xxxx"}
 
     pattern = "\"" + Parameter + "\" *: *\"(?<match>[^\"]*)\"" ;
 
     QRegularExpression rx ;
     rx.setPattern(pattern) ;
 
-    QRegularExpressionMatch rm = rx.match(record) ;
+    QRegularExpressionMatch rm = rx.match(Response) ;
 
     if (rm.hasMatch()) {
         extracttokenresult = rm.captured("match") ;
     }
     return extracttokenresult ;
 }
+
+
+//=====================================================================================================
+//
+// Private: GoogleAccess - ExtractErrorCode
+//
+// Parse the supplied response, and extract and update the errormessage
+//
+void GoogleAccess::ExtractErrorCode(QNetworkReply *reply)
+{
+    QByteArray resp = reply->readAll() ;
+
+    QString message = ExtractParameter(resp,"message") ;
+    QString error = ExtractParameter(resp,"error") ;
+    QString description = ExtractParameter(resp,"error_description") ;
+    QVariant replycode=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) ;
+
+    errorstatus = QString("Error ") + replycode.toString() + QString(": ") ;
+    if (!message.isEmpty()) errorstatus += message ;
+    else errorstatus += error + QString(" - ") + description ;
+}
+
 
 //=====================================================================================================
 //
@@ -659,3 +714,22 @@ bool GoogleAccess::loadSettings()
     this->refreshtoken=settings.value("refreshtoken", QString("")).toString() ;
     return true ;
 }
+
+
+
+//=====================================================================================================
+//
+// Private: GoogleAccess - checkSsl
+//
+// Verify SSL Loaded and return version number of library
+//
+#include <QSslSocket>
+QString GoogleAccess::checkSsl() {
+    bool supported = QSslSocket::supportsSsl() ;
+    if (supported) {
+        return QSslSocket::sslLibraryVersionString() ;
+    } else {
+        return QString("") ;
+    }
+}
+

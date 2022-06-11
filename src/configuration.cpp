@@ -5,7 +5,6 @@
 #include <QMessageBox>
 #include <QDir>
 
-#include "google-auth.h"
 #define AUTHSCOPE "https://www.googleapis.com/auth/contacts"
 
 Configuration::Configuration(QWidget *parent) :
@@ -226,16 +225,12 @@ QString Configuration::hereApiKey()
 
 QString Configuration::googleOauth2Id()
 {
-    QString ConfId = filesettings->value("keys/googleoauth2id", QString("")).toString() ;
-    if (ConfId.isEmpty()) return QString(GOOGLEAUTHID)  ;
-    else return ConfId ;
+    return filesettings->value("keys/googleoauth2id", QString("")).toString() ;
 }
 
 QString Configuration::googleOauth2Secret()
 {
-    QString Secret = filesettings->value("keys/googleoauth2secret", QString("")).toString() ;
-    if (Secret.isEmpty()) return QString(GOOGLEAUTHSECRET)  ;
-    else return Secret ;
+    return filesettings->value("keys/googleoauth2secret", QString("")).toString() ;
 }
 
 QString Configuration::mapTileUrl()
@@ -384,6 +379,12 @@ GoogleAccess& Configuration::googleAccess()
 
 void Configuration::on_pushButton_googleAuthorise_clicked()
 {
+   // Check ini file parameters are present
+   if (googleOauth2Id().isEmpty() || googleOauth2Secret().isEmpty()) {
+       QMessageBox::warning(this, "POI", QString("Google Access requires the googleoauth2id and googleoauth2secret to be defined in the POI.ini file")) ;
+       return ;
+   }
+
    // Re-authorise google account
    if (!googleaccess->Authorise()) {
      QMessageBox::warning(this, "POI", QString("Google Access: ") + googleaccess->getNetworkError()) ;

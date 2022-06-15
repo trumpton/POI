@@ -21,9 +21,13 @@
 QTVERSION := qt6lts
 
 # Application specific configuration
-# Name of application exe file
+# Name of application exe file inside the AppImage
 
 APPNAME := POI
+
+# Name of the application as defined in the desktop file
+
+FULLAPPNAME := POI_Manager
 
 # Library to exclude from build
 
@@ -56,8 +60,10 @@ TOOLSDIR := ./tools
 LINUXDEPLOY := linuxdeploy-${ARCH}.AppImage
 LINUXDEPLOYQT := linuxdeploy-plugin-qt-${ARCH}.AppImage
 
+GITVER := $(shell git describe --tags)
 QV := $(if $(QT_SELECT),$(QT_SELECT),$(QTVERSION))
 QMAKEEXE := $(if ${QMAKE},${QMAKE},$(shell echo "`qtchooser -qt=${QV} -print-env | grep QTTOOLDIR | cut -d\\" -f2`/qmake"))
+OUTPUTFILENAME := ${FULLAPPNAME}_${GITVER}_${ARCH}.AppImage
 
 help:
 	#
@@ -71,6 +77,8 @@ help:
 	# make qmake     - Runs qmake, ready for build / compilation
 	# make build     - Builds application from Makefile in build folder
 	# make appimage  - Builds appimage from application in build folder
+	#
+	# Current ${APPNAME} version : ${GITVER}
 	#
 	# Using qmake : ${QMAKEEXE}
 	#
@@ -97,7 +105,7 @@ qmake: ${BUILD}/Makefile
 	
 build: ${BUILD}/${APPNAME}
 
-appimage: tools build doappimage
+appimage: tools build ${RELEASE}/${OUTPUTFILENAME}
 
 #
 # Download linuxdeploy tools
@@ -125,7 +133,7 @@ ${TOOLSDIR}/${LINUXDEPLOYQT}:
 # Build the appimage
 #
 
-doappimage:
+${RELEASE}/${OUTPUTFILENAME}:
 
 	export QMAKE=${QMAKEEXE} && cd ${BUILD} && \
 		../${TOOLSDIR}/${LINUXDEPLOY} \
@@ -150,16 +158,11 @@ doappimage:
 
 # Now create the output image
 
-	cd ${BUILD} && \
+	export OUTPUT=../${RELEASE}/${OUTPUTFILENAME} && cd ${BUILD} && \
 		../${TOOLSDIR}/${LINUXDEPLOY} \
 		--appdir appdir \
 		--exclude-library "${EXCLUDELIB}*" \
 		--output appimage
-
-# Now transfer to release
-
-	mkdir -p ${RELEASE}
-	/bin/mv ${BUILD}/*AppImage ${RELEASE}
 
 	#
 	# AppImage file has been placed in ${RELEASE} folder

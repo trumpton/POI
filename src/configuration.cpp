@@ -344,9 +344,15 @@ void Configuration::on_pushButton_IniFolder_clicked()
             "POI", QString("A ") + QString(INIFILE) +
                    QString(" configuration file does not exist, attempting to create one..."));
 
-        QString src=QCoreApplication::applicationDirPath() + QString("/example-") + QString(INIFILE) ;
+        QString src1=QCoreApplication::applicationDirPath() + QString("/example-") + QString(INIFILE) ;
+	QString src2=QCoreApplication::applicationDirPath() + QString("../share/POI/example-") + QString(INIFILE) ;
         QString dst=QString(results) + QString("/") + QString(INIFILE) ;
-        QFile::copy(src, dst) ;
+
+        if (QFileInfo::exists(src1) && QFileInfo(src1).isFile()) {
+		QFile::copy(src1, dst) ;
+	} else if (QFileInfo::exists(src1) && QFileInfo(src1).isFile()) {
+		QFile::copy(src2, dst) ;
+	}
 
         if (!QDir(results).exists(INIFILE)) {
             QMessageBox::warning(this,

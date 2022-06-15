@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=POI Manager
-Exec=AppRun %F
-Icon=default
+Exec=POI
+Icon=POI
 Comment=Points of Interest File Manager
 Categories=Utility;
 Terminal=true

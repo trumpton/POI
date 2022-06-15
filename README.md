@@ -26,44 +26,36 @@ OSM - this is used to specify the base map, and the Nomaitm Open Streetmaps geoc
 Here - this is used to specify the Here geocoding (application id and code required in the keys section)
 Bing - this is used to specify the Bing aerial maps (key required in the keys section)
 
-# Building - Preparation
+The program can also upload contacts to Google, and for this it requires a Google access key and secret
+adding to the ini file.  Please see the ini file for details.
 
-Ensure that all of the QT modules and supporting apps are installed, including:
+# Linux Building - Preparation
 
-   qtcreator, qt5, qt5-default
-  
-   qtwebengine5-dev, libqt5webenginewidgets5, qtwebenginewidgets-dev, 
-   qtdeclarative5-dev
+Ensure QT is installed.  This program has been designed to work with QT6.  
+If you install directly from https://www.qt.io/download
 
-   g++, cmake
+Make sure that you point to the correct qmake file - this can be done by
+specifying it explictly by editing the Makefile, or installing 'qtchooser'
 
-In order to create an AppImage (optional), you will also need: linuxdeployqt and appimagetool, available from:
+If you install qtchooser, add a qtx.y.z.conf file to /etc/xdg/qtchooser
+and ensure it contains 2 lines, the first being the path to the qt bin folder
+and the second containing the path to the qt lib folder
 
-  https://github.com/probonopd/linuxdeployqt/releases
-  https://github.com/AppImage/AppImageKit/releases/tag/continuous
+Either load the POI.pro file in QtCreator
 
-These tools should be installed into your path.
+Or use make to compile:
 
-# Building - Configuration and Build
+	make build
 
-Either make with qtcreator, or manually create a build folder at the same level as the source folder and make as follows:
+Or create an AppImage release:
 
-  mkdir build
-  cd build
-  /usr/lib/qt5/bin/qmake -o Makefile ../src/POI.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
-  make
+	make appimage
+
+# Configuration File
 
 The configuration is not loaded from the POI.ini file, which must be manually edited if keys are to be added.
-The file is automatically created (copied from the exe folder) when the configuration directory is selected from
-the configuration menu.
-
-# Building - Creating a Release
-
-If you wish to create an AppImage, you can also do the following
-
-  cd ../release
-  cp ../build/POI .
-  linuxdeployqt POI
+The file is automatically created (copied from the exe folder or usr/share/POI folder) when the configuration 
+directory is selected from the configuration menu.
 
 # Debugging
 

@@ -114,6 +114,7 @@ appimage: tools build ${RELEASE}/${OUTPUTFILENAME}
 tools: ${TOOLSDIR}/${LINUXDEPLOY} ${TOOLSDIR}/${LINUXDEPLOYQT}
 
 ${TOOLSDIR}/${LINUXDEPLOY}:
+	mkdir -p ${TOOLSDIR} && \
 	cd ${TOOLSDIR} && \
 	wget -N https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/${LINUXDEPLOY} && \
 	chmod +x ${LINUXDEPLOY}
@@ -125,6 +126,7 @@ ${TOOLSDIR}/${LINUXDEPLOYQT}:
         # https://github.com/koord-live/linuxdeploy-plugin-qt/releases
 	# wget -N https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT}
 
+	mkdir -p ${TOOLSDIR} && \
 	cd ${TOOLSDIR} && \
 	wget -N https://github.com/koord-live/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT} && \
 	chmod +x ${LINUXDEPLOYQT}

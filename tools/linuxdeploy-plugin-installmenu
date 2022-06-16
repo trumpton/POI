@@ -1,0 +1,124 @@
+#!/bin/bash
+#
+# linuxdeploy-plugin-installmenu.sh
+#
+# Linuxdeploy plugin to add an --install-menu option to AppImage files
+# which when run, install a desktop and icon file into the desktop menu
+# infrastructure.
+# When the AppImage file is run as root, the menu files are installed
+# in /usr/share.  Otherwise, they are stored in the user's .config/share
+# folder.
+#
+
+#
+# CHECK PARAMS
+#
+
+while [ "$1" != "" ]; do
+    case "$1" in
+        --plugin-api-version)
+            echo "0"
+            exit 0
+            ;;
+        --appdir)
+            APPDIR="$2"
+            shift
+            shift
+            ;;
+        *)
+            echo "Invalid argument: $1"
+            echo
+            show_usage
+            exit 2
+    esac
+done
+
+if [ -z "${APPDIR}" ]; then
+	echo "--appdir not supplied"
+	exit 2
+fi
+
+#
+# DEFINITION OF APPHOOK SCRIPT
+#
+
+read -d '' APPHOOKSCRIPT <<APPHOOKSCRIPTEND
+#!/bin/bash
+#
+# installmenu
+#
+
+if [ "\$1" == "--help" ]; then
+	echo "${APPIMAGE} --install-menu    - Installs desktop menu files (in /usr/share if run as root)"
+fi
+
+if [ "\$1" == "--install-menu" ]; then
+
+	if [ -z "\${APPIMAGE}" ]; then
+		echo "APPIMAGE variable not set"
+		exit
+	fi
+
+	if [ -z "\${APPDIR}" ]; then
+		echo "APPDIR variable not set"
+		exit
+	fi
+
+	if [ -z "\${HOME}" ]; then
+		echo "HOME variable not set"
+		exit
+	fi
+
+	WHOAMI=\`whoami\`
+
+	if [ "\${WHOAMI}" == "root" ]; then
+		TARGET="/usr/share"
+	else
+		TARGET="\${HOME}/.local/share"
+	fi
+
+	DESKTOP=\${APPDIR}/*.desktop
+	ICON=\${APPDIR}/\*.png
+
+	if [ ! -f \${DESKTOP} ]; then
+		echo ".desktop file expected in \${APPDIR}"
+		exit
+	fi
+
+	if [ ! -f \${ICON} ];  then
+		echo ".png icon file expected in \${APPDIR}"
+		exit
+	fi
+
+	ICONFN="\`echo \${ICON} | rev | cut -d/ -f1 | rev\`"
+	DESKTOPFN="\`echo \${DESKTOP} | rev | cut -d/ -f1 | rev\`"
+
+	# Parse and Copy Desktop File
+	echo "Copying/Updating desktop file in \${TARGET}/applications/\${DESKTOPFN}"
+
+	mkdir -p "\${TARGET}/applications"
+	cat "\${APPDIR}/\${DESKTOPFN}" | sed -e "s\\\\\\\\^icon=.\*\$\\\\\\\\Icon=\${TARGET}/icons/\${ICONFN}\\\\\\\\gi" | sed -e "s\\\\\\\\^exec=.\*\$\\\\\\\\Exec=\${APPIMAGE}\\\\\\\\gi" > "\${TARGET}/applications/\${DESKTOPFN}"
+
+	# Copy the Icon File
+	if [ ! -f "\${TARGET}/icons/\${ICONFN}" ]; then
+		echo "Copying ICON to \${TARGET}/icons/\${ICONFN}"
+		mkdir -p "\${TARGET}/icons"
+		cp "\${APPDIR}/\${ICONFN}" "\${TARGET}/icons"
+	fi
+
+	# Update complete, so finish execution
+	exit
+
+fi
+APPHOOKSCRIPTEND
+
+#
+# END OF APPHOOK SCRIPT
+#
+
+mkdir -p "${APPDIR}/apprun-hooks"
+echo "${APPHOOKSCRIPT}" > "${APPDIR}/apprun-hooks/linuxdeploy-plugin-installmenu-hook.sh"
+echo "linuxdeploy-plugin-installmenu hook script installed in ${APPDIR}/apprun-hooks"
+
+exit 0
+

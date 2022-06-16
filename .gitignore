@@ -1,4 +1,4 @@
 release/*
 build*
-tools/*
 src/POI.pro.user
+tools/linuxdeploy*.AppImage

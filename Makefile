@@ -144,7 +144,8 @@ ${RELEASE}/${OUTPUTFILENAME}:
         	--exclude-library "${EXCLUDELIB}*" \
         	--appdir appdir \
         	--executable ${APPNAME} \
-        	--plugin qt 
+		--plugin installmenu \
+        	--plugin qt
 
 # libnss causes problems, so is unbundled
 # note: the exclude-library is not passes to the qt plugin
@@ -162,6 +163,8 @@ ${RELEASE}/${OUTPUTFILENAME}:
 
 	export OUTPUT=../${RELEASE}/${OUTPUTFILENAME} && cd ${BUILD} && \
 		../${TOOLSDIR}/${LINUXDEPLOY} \
+		--desktop-file "../${APPIMAGESRC}/${APPNAME}.desktop" \
+		--icon-file "../${APPIMAGESRC}/${APPNAME}.png" \
 		--appdir appdir \
 		--exclude-library "${EXCLUDELIB}*" \
 		--output appimage

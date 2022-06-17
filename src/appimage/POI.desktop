@@ -2,7 +2,7 @@
 Type=Application
 Name=POI Manager
 Exec=POI
-Icon=POI.png
+Icon=POI
 Comment=Points of Interest File Manager
 Categories=Utility;Maps;
 Terminal=false

@@ -78,17 +78,22 @@ if [ "\$1" == "--install-menu" ]; then
 	fi
 
 	DESKTOP=\${APPDIR}/*.desktop
-	ICON=\${APPDIR}/\*.png
 
 	if [ ! -f \${DESKTOP} ]; then
 		echo ".desktop file expected in \${APPDIR}"
 		exit
 	fi
 
-	if [ ! -f \${ICON} ];  then
-		echo ".png icon file expected in \${APPDIR}"
-		exit
-	fi
+        if [ -f \${APPDIR}/*.png ];  then
+                ICON=\${APPDIR}/*.png
+        fi
+        if [ -f \${APPDIR}/*.svg ]; then
+                ICON=\${APPDIR}/*.svg
+        fi
+        if [ -z \${ICON} ]; then
+                echo "png or svg icon not found in \${APPDIR}"
+                exit
+        fi
 
 	ICONFN="\`echo \${ICON} | rev | cut -d/ -f1 | rev\`"
 	DESKTOPFN="\`echo \${DESKTOP} | rev | cut -d/ -f1 | rev\`"
@@ -97,7 +102,8 @@ if [ "\$1" == "--install-menu" ]; then
 	echo "Copying/Updating desktop file in \${TARGET}/applications/\${DESKTOPFN}"
 
 	mkdir -p "\${TARGET}/applications"
-	cat "\${APPDIR}/\${DESKTOPFN}" | sed -e "s\\\\\\\\^icon=.\*\$\\\\\\\\Icon=\${TARGET}/icons/\${ICONFN}\\\\\\\\gi" | sed -e "s\\\\\\\\^exec=.\*\$\\\\\\\\Exec=\${APPIMAGE}\\\\\\\\gi" > "\${TARGET}/applications/\${DESKTOPFN}"
+	# cat "\${APPDIR}/\${DESKTOPFN}" | sed -e "s\\\\\\\\^icon=.\*\$\\\\\\\\Icon=\${TARGET}/icons/\${ICONFN}\\\\\\\\gi" | sed -e "s\\\\\\\\^exec=.\*\$\\\\\\\\Exec=\${APPIMAGE}\\\\\\\\gi" > "\${TARGET}/applications/\${DESKTOPFN}"
+	cat "\${APPDIR}/\${DESKTOPFN}" | sed -e "s\\\\\\\\^exec=.\*\$\\\\\\\\Exec=\${APPIMAGE}\\\\\\\\gi" > "\${TARGET}/applications/\${DESKTOPFN}"
 
 	# Copy the Icon File
 	if [ ! -f "\${TARGET}/icons/\${ICONFN}" ]; then

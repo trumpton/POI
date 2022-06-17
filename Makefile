@@ -137,6 +137,7 @@ ${TOOLSDIR}/${LINUXDEPLOYQT}:
 
 ${RELEASE}/${OUTPUTFILENAME}:
 
+	mkdir -p ${RELEASE}
 	export QMAKE=${QMAKEEXE} && cd ${BUILD} && \
 		../${TOOLSDIR}/${LINUXDEPLOY} \
         	--desktop-file "../${APPIMAGESRC}/${APPNAME}.desktop" \

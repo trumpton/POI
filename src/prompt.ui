@@ -20,8 +20,8 @@
    <string>Input Query</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="googlemaps.qrc">
-    <normaloff>:/googlemaps/marker-blue.png</normaloff>:/googlemaps/marker-blue.png</iconset>
+   <iconset resource="icons.qrc">
+    <normaloff>:/appimage/POI.png</normaloff>:/appimage/POI.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -61,7 +61,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="googlemaps.qrc"/>
+  <include location="icons.qrc"/>
  </resources>
  <connections>
   <connection>

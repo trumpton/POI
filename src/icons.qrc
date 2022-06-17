@@ -16,5 +16,6 @@
         <file>icons/up.png</file>
         <file>icons/nullimage.png</file>
         <file>icons/copyclipboard.png</file>
+        <file>appimage/POI.png</file>
     </qresource>
 </RCC>

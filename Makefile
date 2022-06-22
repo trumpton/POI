@@ -123,12 +123,13 @@ ${TOOLSDIR}/${LINUXDEPLOYQT}:
         # QtWebEngineProcess - not currently supported {12/6/2022}
         # https://github.com/linuxdeploy/linuxdeploy-plugin-qt/issues/112
         # so alternative linuxdeploy-plugin-qt is used
-        # https://github.com/koord-live/linuxdeploy-plugin-qt/releases
-	# wget -N https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT}
+        #   https://github.com/koord-live/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT}
+	# instead of
+	#   https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT}
 
 	mkdir -p ${TOOLSDIR} && \
 	cd ${TOOLSDIR} && \
-	wget -N https://github.com/koord-live/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT} && \
+	wget -N https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/${LINUXDEPLOYQT} && \
 	chmod +x ${LINUXDEPLOYQT}
 
 #

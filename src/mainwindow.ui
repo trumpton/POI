@@ -1821,7 +1821,9 @@
     <property name="title">
      <string>&amp;About</string>
     </property>
+    <addaction name="actionOnline_Help"/>
     <addaction name="action_About_POI"/>
+    <addaction name="action_License"/>
    </widget>
    <widget class="QMenu" name="menu_Export">
     <property name="title">
@@ -2164,6 +2166,16 @@
   <action name="action_Purge_All_Google_Entries">
    <property name="text">
     <string>&amp;Purge All Google Entries</string>
+   </property>
+  </action>
+  <action name="action_License">
+   <property name="text">
+    <string>&amp;License</string>
+   </property>
+  </action>
+  <action name="actionOnline_Help">
+   <property name="text">
+    <string>Online &amp;Help</string>
    </property>
   </action>
  </widget>

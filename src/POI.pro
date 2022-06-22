@@ -27,6 +27,7 @@ DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 SOURCES += main.cpp\
     googleaccess/googleaccess.cpp \
+    license.cpp \
     mainwindow.cpp \
     mainwindow_googlesync.cpp \
     poicollection.cpp \
@@ -45,6 +46,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     googleaccess/googleaccess.h \
+    license.h \
     poicollection.h \
     configuration.h \
     cookies.h \
@@ -59,6 +61,7 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     configuration.ui \
+    license.ui \
     prompt.ui \
     photoimportdialog.ui \
     segmentchooser.ui

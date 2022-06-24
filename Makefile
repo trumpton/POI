@@ -146,7 +146,7 @@ ${RELEASE}/${OUTPUTFILENAME}:
         	--exclude-library "${EXCLUDELIB}*" \
         	--appdir appdir \
         	--executable ${APPNAME} \
-		--plugin installmenu \
+		--plugin installdesktop \
         	--plugin qt
 
 # libnss causes problems, so is unbundled

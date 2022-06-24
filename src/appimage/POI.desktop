@@ -4,5 +4,5 @@ Name=POI Manager
 Exec=POI
 Icon=POI
 Comment=Points of Interest File Manager
-Categories=Utility;Maps;
+Categories=Utility;Maps
 Terminal=false

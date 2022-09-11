@@ -233,6 +233,9 @@ void MainWindow::on_action_PhotoGps_triggered()
         tr("Select Photo"), configuration->imageFolder(), tr("JPG Files (*.jpg *.JPG *.png *.PNG)"));
     if (fileNames.isEmpty()) return ;
 
+    int failcount=0 ;
+    int badgpsinfocount=0 ;
+
     for (int i=0; i<fileNames.count(); i++) {
 
         // create new poientry
@@ -243,6 +246,7 @@ void MainWindow::on_action_PhotoGps_triggered()
         if (!img.load(fileNames.at(i))) {
 
             success = false ;
+            failcount++ ;
 
         } else {
 
@@ -258,35 +262,64 @@ void MainWindow::on_action_PhotoGps_triggered()
             double lat = inf.GeoLocation.Latitude ;
             double lon = inf.GeoLocation.Longitude ;
             double alt = inf.GeoLocation.Altitude ;
-            ent.set(PoiEntry::DATETIME, date) ;
-            ent.set(PoiEntry::PHOTODATE, date) ;
-            ent.set(PoiEntry::PHOTOFILENAME, fileNames.at(i)) ;
-            ent.set(PoiEntry::PHOTOLAT, QString("%1").arg(lat)) ;
-            ent.set(PoiEntry::PHOTOLON, QString("%1").arg(lon)) ;
-            ent.set(PoiEntry::PHOTOELEVATION, QString("%1").arg(alt)) ;
-            ent.setDate(date, 0) ;
 
-            ent.set(PoiEntry::EDITEDDESCR, QString("Timestamp: %1, Location: %2,%3").arg(date).arg(lat).arg(lon)) ;
+            if (lat==0.0 && lon==0.0 && alt==0.0) {
 
-            // If lat/lon still not set, place it in screen centre
-            if (lat==0.0 && lon==0.0) {
-                lat = ui->mapWebView->getLat() ;
-                lon = ui->mapWebView->getLon() ;
+                success = false ;
+                badgpsinfocount++ ;
+
+            } else {
+
+                ent.set(PoiEntry::DATETIME, date) ;
+                ent.set(PoiEntry::PHOTODATE, date) ;
+                ent.set(PoiEntry::PHOTOFILENAME, fileNames.at(i)) ;
+                ent.set(PoiEntry::PHOTOLAT, QString("%1").arg(lat)) ;
+                ent.set(PoiEntry::PHOTOLON, QString("%1").arg(lon)) ;
+                ent.set(PoiEntry::PHOTOELEVATION, QString("%1").arg(alt)) ;
+                ent.setDate(date, 0) ;
+
+                ent.set(PoiEntry::EDITEDDESCR, QString("Timestamp: %1, Location: %2,%3").arg(date).arg(lat).arg(lon)) ;
+
+                ent.setLatLon(lat, lon) ;
+
+                // add waypoint to the list with title of the photo
+                // and re-sort so newest files end up at the end of the list
+                fileCollection.add(ent) ;
+                fileCollection.sortBySequence();
+
             }
 
-            ent.setLatLon(lat, lon) ;
-
-            // add waypoint to the list with title of the photo
-            // and re-sort so newest files end up at the end of the list
-            fileCollection.add(ent) ;
-            fileCollection.sortBySequence();
         }
     }
 
     refresh(true) ;
 
     if (!success) {
-        // Report, some files failed to load
+
+        // Report, 'failcount' or 'badgpsinfocount' / filenames.count() files failed to load
+
+        QString msg ;
+        int goodcount = fileNames.count() - failcount - badgpsinfocount ;
+
+        msg = QString("There was a problem loading the GPS data from the images: Only ") +
+                QString::number(goodcount) +
+                QString(" out of ") + QString::number(fileNames.count()) + QString(" images ") +
+                ((goodcount==1)?QString("was"):QString("were")) + QString(" loaded");
+
+        if (failcount>0) {
+            msg = msg + QString(" - ") + QString::number(failcount) + QString(" images ") +
+                    ((failcount==1)?QString("was"):QString("were")) + QString(" invalid / courrupt") ;
+        }
+
+        if (badgpsinfocount>0) {
+            msg = msg + QString(" - ") + QString::number(badgpsinfocount) + QString(" images ") +
+                    ((badgpsinfocount==1)?QString("was"):QString("were")) + QString(" missing GPS information") ;
+        }
+
+        msg = msg + QString(".") ;
+
+        QMessageBox::warning(this, "Problem loading / parsing images", msg) ;
+
     }
 
 }

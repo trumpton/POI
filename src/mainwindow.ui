@@ -1808,7 +1808,6 @@
     </property>
     <addaction name="separator"/>
     <addaction name="action_PhotoGps"/>
-    <addaction name="action_PhotoTime"/>
     <addaction name="separator"/>
     <addaction name="action_ImportOv2"/>
     <addaction name="action_ImportGpx"/>

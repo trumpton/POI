@@ -151,7 +151,6 @@ private slots:
     void on_actionTransfer_to_Garmin_triggered();
     void on_actionTransfer_from_Garmin_triggered();
     void on_action_PhotoGps_triggered();
-    void on_action_PhotoTime_triggered();
     void on_actionResort_Waypoints_By_Date_triggered();
     void on_actionUndo_triggered();
 

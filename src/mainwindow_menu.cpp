@@ -54,7 +54,6 @@
 #include "urls.h"
 #include "version.h"
 #include "easyexif/exif.h"
-#include "photoimportdialog.h"
 
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -320,110 +319,6 @@ void MainWindow::on_action_PhotoGps_triggered()
 
         QMessageBox::warning(this, "Problem loading / parsing images", msg) ;
 
-    }
-
-}
-
-
-// Import Photo
-void MainWindow::on_action_PhotoTime_triggered()
-{
-    bool success=true ;
-    int photoTimeOffset=0 ;
-
-    int tracksize = fileCollection.trackSize() ;
-
-    if (tracksize<=0) {
-        // Error, no track loaded
-        return ;
-    }
-
-    QDateTime from = fileCollection.trackAt(0).date() ;
-    QDateTime to = fileCollection.trackAt(tracksize-1).date() ;
-
-    if (!from.isValid() || !to.isValid()) {
-        // Error, tracks do not contain date/time stamps
-        return ;
-    }
-
-    PhotoImportDialog pid ;
-    pid.setTrackTimes(from, to) ;
-
-    // prompt for photo
-    QStringList fileNames = QFileDialog::getOpenFileNames(this,
-        tr("Select Photo"), configuration->imageFolder(), tr("JPG Files (*.jpg *.JPG *.png *.PNG)"));
-    if (fileNames.isEmpty()) return ;
-
-    for (int i=0; i<fileNames.count(); i++) {
-
-        // create new poientry
-        PoiEntry ent ;
-
-        QImage img ;
-
-        if (!img.load(fileNames.at(i))) {
-
-            success = false ;
-
-        } else {
-
-            ent.setImage(img) ;
-            ent.setSequence(9999) ;
-
-            QFileInfo fileinfo(fileNames.at(i)) ;
-            ent.set(PoiEntry::EDITEDTITLE, fileinfo.baseName());
-
-            // parse exif / tracks and store information
-            easyexif::EXIFInfo inf = getExif(fileNames.at(i)) ;
-            QString date = QString(inf.DateTime.data()) ;
-            double lat = inf.GeoLocation.Latitude ;
-            double lon = inf.GeoLocation.Longitude ;
-            double alt = inf.GeoLocation.Altitude ;
-            ent.set(PoiEntry::DATETIME, date) ;
-            ent.set(PoiEntry::PHOTODATE, date) ;
-            ent.set(PoiEntry::PHOTOFILENAME, fileNames.at(i)) ;
-            ent.set(PoiEntry::PHOTOLAT, QString("%1").arg(lat)) ;
-            ent.set(PoiEntry::PHOTOLON, QString("%1").arg(lon)) ;
-            ent.set(PoiEntry::PHOTOELEVATION, QString("%1").arg(alt)) ;
-
-            ent.set(PoiEntry::EDITEDDESCR, QString("Timestamp: %1, Location: %2,%3").arg(date).arg(lat).arg(lon)) ;
-            ent.setDate(date, 0) ;
-
-            if (!pid.repeat() || ent.date().addSecs(3600*photoTimeOffset)<from || ent.date().addSecs(3600*photoTimeOffset)>to) {
-                pid.setPhoto(ent.date(), img);
-                pid.exec() ;
-                photoTimeOffset = pid.offset() ;
-            }
-            ent.setDate(date, photoTimeOffset) ;
-
-            TrackEntry &te = fileCollection.findTrack(ent.date()) ;
-            if (te.isValid()) {
-                // Get lat/lon from nearest track entry, and add waypoint to file collection
-                lat = te.lat() ;
-                lon = te.lon() ;
-                ent.setLatLon(lat, lon) ;
-                fileCollection.add(ent) ;
-                fileCollection.sortBySequence();
-            } else if (lat!=0.0 || lon!=0.0) {
-                // Use lat/lon from photo if it is available, and put it in working, rather than file
-                ent.setLatLon(lat, lon) ;
-                workingCollection.add(ent) ;
-                workingCollection.sortBySequence();
-            } else {
-                // If no match found, place it in screen centre, and put it in working, rather than file
-                lat = ui->mapWebView->getLat() ;
-                lon = ui->mapWebView->getLon() ;
-                ent.setLatLon(lat, lon) ;
-                workingCollection.add(ent) ;
-                workingCollection.sortBySequence();
-            }
-        }
-    }
-
-    refresh(true) ;
-
-    if (!success) {
-        // Report, some files failed to load
     }
 
 }

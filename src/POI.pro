@@ -41,7 +41,6 @@ SOURCES += main.cpp\
     easyexif/exif.cpp \
     undo.cpp \
     mapswidget.cpp \
-    photoimportdialog.cpp \
     segmentchooser.cpp
 
 HEADERS  += mainwindow.h \
@@ -56,14 +55,12 @@ HEADERS  += mainwindow.h \
     easyexif/exif.h \
     undo.h \
     mapswidget.h \
-    photoimportdialog.h \
     segmentchooser.h
 
 FORMS    += mainwindow.ui \
     configuration.ui \
     license.ui \
     prompt.ui \
-    photoimportdialog.ui \
     segmentchooser.ui
 
 RESOURCES += \

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1209</width>
-    <height>729</height>
+    <width>1304</width>
+    <height>753</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1783,11 +1783,17 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1209</width>
-     <height>19</height>
+     <width>1304</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;File</string>
     </property>
@@ -1803,6 +1809,12 @@
     <addaction name="action_Exit"/>
    </widget>
    <widget class="QMenu" name="menu_Import">
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;Import</string>
     </property>
@@ -1817,6 +1829,26 @@
     <addaction name="actionAuto_Geocode"/>
    </widget>
    <widget class="QMenu" name="menu_About">
+    <property name="geometry">
+     <rect>
+      <x>795</x>
+      <y>141</y>
+      <width>300</width>
+      <height>170</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;About</string>
     </property>
@@ -1825,6 +1857,12 @@
     <addaction name="action_License"/>
    </widget>
    <widget class="QMenu" name="menu_Export">
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;Transfer</string>
     </property>
@@ -1839,6 +1877,12 @@
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;Edit</string>
     </property>
@@ -1849,6 +1893,26 @@
     <addaction name="actionUndo"/>
    </widget>
    <widget class="QMenu" name="menu_Track">
+    <property name="geometry">
+     <rect>
+      <x>438</x>
+      <y>141</y>
+      <width>300</width>
+      <height>238</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>Trac&amp;k</string>
     </property>
@@ -1866,12 +1930,32 @@
     <addaction name="menuDelete_Track_Points"/>
    </widget>
    <widget class="QMenu" name="menu_Search">
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;Search</string>
     </property>
     <addaction name="action_FindLocation"/>
    </widget>
    <widget class="QMenu" name="menuView">
+    <property name="geometry">
+     <rect>
+      <x>739</x>
+      <y>141</y>
+      <width>300</width>
+      <height>310</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
     <property name="title">
      <string>&amp;View</string>
     </property>
@@ -2018,7 +2102,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Snap Track to Waypoints</string>
+    <string>&amp;Snap Track To Waypoint</string>
    </property>
   </action>
   <action name="action_FindLocation">
@@ -2046,7 +2130,7 @@
   </action>
   <action name="actionResort_Waypoints_By_Date">
    <property name="text">
-    <string>Resort Waypoints By &amp;Date</string>
+    <string>Sort Waypoints By &amp;Date</string>
    </property>
   </action>
   <action name="actionUndo">

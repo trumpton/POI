@@ -187,6 +187,9 @@ private slots:
 
 private:
 
+    // Safe File Copy (copies locked files, and preserves dates)
+    bool copyFile(QString src, QString dst) ;
+
     // Update the lists and entry form
     bool refresh(bool refreshMarkers = false, bool centreOnMarker = false, int zoom = 0) ;
 

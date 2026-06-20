@@ -741,6 +741,8 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
 {
     QDir garmin(configuration->garminFolder()) ;
     QDir garminfrom(configuration->garminFromFolder()) ;
+    QDir garminfromcurrent(configuration->garminFromFolder() + QDir::separator() + QString("Current")) ;
+
     QDir import(configuration->importFolder()) ;
 
     if (!garmin.isReadable()) {
@@ -759,17 +761,29 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
     QStringList fileList ;
     QStringList pathList ;
 
+    // Add files in garmin
     garmin.setNameFilters(filter);
     for (int i=0; i<garmin.entryList().size(); i++) {
         pathList.append(configuration->garminFolder() + QDir::separator()) ;
         fileList.append(garmin.entryList().at(i)) ;
     }
 
+    // Add files in garminFrom folder
     garminfrom.setNameFilters(filter) ;
     for (int i=0; i<garminfrom.entryList().size(); i++) {
         pathList.append(configuration->garminFromFolder() + QDir::separator()) ;
         fileList.append(garminfrom.entryList().at(i)) ;
     }
+
+    // Add files in garminFolder/Current
+    garminfromcurrent.setNameFilters(filter) ;
+    for (int i=0; i<garminfromcurrent.entryList().size(); i++) {
+        pathList.append(configuration->garminFromFolder() + QDir::separator() + QString("Current") + QDir::separator()) ;
+        fileList.append(garminfromcurrent.entryList().at(i)) ;
+    }
+
+
+
 
     QProgressDialog dlg(QString("POI"), QString("Abort"), 0, fileList.size(), this) ;
     dlg.setWindowModality(Qt::WindowModal);
@@ -786,9 +800,7 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
         QString src = pathList.at(i) + fileList.at(i) ;
         QString dst = configuration->importFolder() + QDir::separator() + fileList.at(i) ;
 
-        if (QFile::exists(dst)) { QFile::remove(dst); }
-
-        success &= QFile::copy(src, dst) ;
+        success &= copyFile(src,dst) ;
 
         if (success) {
             if (configuration->importMove()) {
@@ -816,6 +828,64 @@ void MainWindow::on_actionTransfer_from_Garmin_triggered()
         QMessageBox::information(this, QString("POI"), QString("Transfer Complete."), QMessageBox::Ok) ;
     }
 
+}
+
+// Only copies if files are newer
+bool MainWindow::copyFile(QString src, QString dst)
+{
+    bool pass = true ;
+    QFile srcFile(src);
+    QFile dstFile(dst) ;
+    QFileInfo srcInfo(src) ;
+    QFileInfo dstInfo(dst) ;
+    QDateTime srcModified = srcInfo.fileTime(QFileDevice::FileModificationTime) ;
+    QDateTime dstModified = dstInfo.fileTime(QFileDevice::FileModificationTime) ;
+    bool bDstExists = dstFile.exists() ;
+    bool bSrcIsNewer = srcModified > dstModified ;
+
+    if (!bDstExists || bSrcIsNewer) {
+
+        // Remove old version of destination
+        if (bDstExists) {
+            // Attempt to move old file to trash
+            if (!dstFile.moveToTrash()) {
+                // If unable, simply remove it
+                pass &= dstFile.remove() ;
+            }
+            // Re-affirm destination filename as moveToTrash changes it
+            dstFile.setFileName(dst) ;
+        }
+
+        // Copy the file
+        pass &= srcFile.copy(dst) ;
+
+        // Copy File attributes
+        if (pass) {
+
+            QFileInfo srcInfo = QFileInfo(src) ;
+            QDateTime srcModified = srcInfo.lastModified() ;
+
+            // Open file to allow modification of attributes
+            dstFile.open(QIODevice::ReadOnly) ;
+
+            // Set timestamps
+            dstFile.setFileTime(srcModified, QFileDevice::FileBirthTime) ;
+            dstFile.setFileTime(srcModified, QFileDevice::FileModificationTime) ;
+            dstFile.setFileTime(srcModified, QFileDevice::FileAccessTime) ;
+
+            // Set permissions
+            dstFile.setPermissions(srcInfo.permissions()) ;
+
+            // Save attributes
+            dstFile.close() ;
+
+        } else {
+
+            dstFile.remove() ;
+        }
+
+    }
+    return pass ;
 }
 
 // Applicable to Linux Devices Only

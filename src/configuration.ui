@@ -287,8 +287,20 @@
         </item>
         <item>
          <widget class="QLineEdit" name="importFilter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>400</width>
+            <height>30</height>
+           </size>
+          </property>
           <property name="text">
-           <string>Track_*.gpx;Waypoints_*.gpx</string>
+           <string>Track_*.gpx;Waypoints_*.gpx;Current.gpx</string>
           </property>
          </widget>
         </item>
